@@ -20,6 +20,8 @@ Web 的 Appearance、Language 和繁忙态 Enter 偏好原本存在浏览器 `lo
 
 Client 在非 loopback 页面禁用 Host 持久化，因此这些页面的偏好仍只保留在进程内，尽管 Connection 认证完整 API。动态第三方主题 id 仍是内置 Host schema 之外的进程内扩展；移除其中一个会重置实时注册表，但不会替换上一个持久化的内置偏好。
 
+部署还可以通过允许的 Locale definition 列表、固定默认值以及隐藏 Language settings 行的选项来约束 Locale client。允许列表之外的已存偏好会被忽略而非删除：部署策略控制当前 UI，同时为其他允许该值的部署保留持久化用户偏好。
+
 ## 曾考虑的替代方案
 
 **保留 `localStorage`，并在不同端口间复制值。** 一个 origin 无法枚举另一个 origin 的存储，而 Host 中继会围绕浏览器特有格式重新实现一套 settings 服务。
@@ -37,6 +39,8 @@ Client 在非 loopback 页面禁用 Host 持久化，因此这些页面的偏好
 ## 后果
 
 Appearance、Language 和繁忙态 Enter 选择会跟随 DSH 用户 home，跨越重新加载、端口与回环 origin。直接编辑 `settings.yaml` 所产生的变更会通过现有失效流收敛，而旧的 `dsh.theme`、`dsh.locale` 和 `dsh.conversation.busyEnter` 条目既不会被读取，也不会被写入。
+
+当部署限制 locale 时，只有获允许的 definition 才能激活或供用户选择。隐藏 Language 行只移除面向用户的 selector，不会修改 Host 中已存的文档。
 
 启动时可能会在后台读取结算前短暂显示领域默认值。短暂的读取失败会保留该默认值或上一个正确的进程内值；重连时会重试。写入被拒时，界面可能会在本地值立即变化后明显恢复为持久化偏好。
 

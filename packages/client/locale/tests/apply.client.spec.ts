@@ -98,6 +98,21 @@ describe('locale apply', () => {
     expect(after.slots.entries(SLOT).some(e => e.component === LanguageRow)).toBe(true)
   })
 
+  it('supports an English-only composition without a language settings row', async () => {
+    const b = await bench()
+    b.setHostPreference('zh')
+    declareItems(b.slots)
+    await b.ctx.plugin({
+      inject: [...inject],
+      apply: ctx => apply(ctx, {
+        allowedLocales: ['en'], defaultLocale: 'en', showLanguageSetting: false,
+      }),
+    }).await()
+    const locale = b.ctx.get('locale') as LocaleRuntime
+    expect(locale.getLocale()).toMatchObject({ active: 'en', locales: [{ id: 'en' }] })
+    expect(b.slots.entries(SLOT).some(entry => entry.component === LanguageRow)).toBe(false)
+  })
+
   it('projects service snapshots into the row store and routes face writes back', async () => {
     const b = await bench()
     declareItems(b.slots)

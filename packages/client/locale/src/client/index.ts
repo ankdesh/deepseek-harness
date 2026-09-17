@@ -5,6 +5,7 @@
  * its own settings surface.
  */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
 import {
   type BoundActions, type LocaleDictOf, type LocaleNamespaceMap, type Translate, type TranslateNS,
 } from '@deepseek-ai/dsh-client-ui-slots'
@@ -77,6 +78,23 @@ export interface LocaleSnapshot {
   /** Monotonic change counter (registry or active changes). */
   revision: number
 }
+
+/** Deployment policy for selectable and initially active languages. */
+export interface Config {
+  /** Locale ids that language definitions may expose. English is required as the lookup terminal. */
+  allowedLocales?: LocaleId[]
+  /** Fixed initial locale; omission retains browser-language detection. */
+  defaultLocale?: LocaleId
+  /** Whether the General settings page exposes the language selector. */
+  showLanguageSetting?: boolean
+}
+
+/** Validated deployment locale policy. */
+export const Config: z<Config> = z.object({
+  allowedLocales: z.array(z.string().pattern(LOCALE_ID_PATTERN)).required(false),
+  defaultLocale: z.string().pattern(LOCALE_ID_PATTERN).required(false),
+  showLanguageSetting: z.boolean().default(true),
+})
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -168,6 +186,8 @@ export class LocaleRuntime {
   private listeners = new Set<() => void>()
   private readonly ctx: ClientContext
   private readonly host: SettingsScope<LocaleSettings> | undefined
+  private readonly allowedLocales: ReadonlySet<string> | undefined
+  private readonly defaultLocale: LocaleId | undefined
   /** Browser-derived locale standing wherever no explicit Host selection does. */
   private provisional: LocaleId
   /** Last explicit selection, including one awaiting an external registration. */
@@ -179,12 +199,34 @@ export class LocaleRuntime {
    * @param host - durable preference scope owned by the providing plugin;
    * absent compositions (standalone dictionary registries) stay process-local.
    */
-  constructor(ctx: ClientContext, host?: SettingsScope<LocaleSettings>) {
+  constructor(
+    ctx: ClientContext,
+    host?: SettingsScope<LocaleSettings>,
+    policy: Pick<Config, 'allowedLocales' | 'defaultLocale'> = {},
+  ) {
     this.ctx = ctx
     this.host = host
-    for (const locale of BUILT_IN_LOCALES) this.catalog.set(localeKey(locale.id), locale)
+    const allowed = policy.allowedLocales !== undefined && policy.allowedLocales.length > 0
+      ? policy.allowedLocales.map(localeKey)
+      : undefined
+    if (allowed !== undefined) {
+      if (new Set(allowed).size !== allowed.length) throw new Error('locale allowedLocales must be unique')
+      if (!allowed.includes(localeKey(FALLBACK_LOCALE))) {
+        throw new Error(`locale allowedLocales must include "${FALLBACK_LOCALE}"`)
+      }
+      this.allowedLocales = new Set(allowed)
+    }
+    for (const locale of BUILT_IN_LOCALES) {
+      if (this.allowedLocales?.has(localeKey(locale.id)) ?? true) this.catalog.set(localeKey(locale.id), locale)
+    }
+    if (policy.defaultLocale !== undefined && !this.catalog.has(localeKey(policy.defaultLocale))) {
+      throw new Error(`locale defaultLocale "${policy.defaultLocale}" is not an allowed built-in locale`)
+    }
+    this.defaultLocale = policy.defaultLocale === undefined
+      ? undefined
+      : this.catalog.get(localeKey(policy.defaultLocale))?.id
     const locales = this.localeList()
-    this.provisional = resolveInitialLocale(locales)
+    this.provisional = this.defaultLocale ?? resolveInitialLocale(locales)
     this.snapshot = Object.freeze({ active: this.provisional, locales, revision: 0 })
     if (host !== undefined) {
       ctx.effect(() => host.subscribe(() => { this.adopt(host) }), 'locale: settings scope adoption')
@@ -256,6 +298,9 @@ export class LocaleRuntime {
   addLanguage(input: LanguageRegistration): () => void {
     const candidate = normalizeLanguage(input)
     const key = localeKey(candidate.id)
+    if (this.allowedLocales !== undefined && !this.allowedLocales.has(key)) {
+      throw new Error(`locale "${candidate.id}" is not allowed by the deployment policy`)
+    }
     if (this.catalog.has(key)) throw new Error(`locale "${candidate.id}" is already registered`)
     const fallback = this.catalog.get(localeKey(candidate.fallback))
     if (fallback === undefined) {
@@ -295,7 +340,7 @@ export class LocaleRuntime {
   private publishCatalog(): void {
     this.fallbackChains.clear()
     const locales = this.localeList()
-    this.provisional = resolveInitialLocale(locales)
+    this.provisional = this.defaultLocale ?? resolveInitialLocale(locales)
     const active = this.resolveActive()
     this.publish(active, active !== this.snapshot.active, locales)
   }
@@ -536,9 +581,9 @@ export const inject = ['slots', 'remote', 'settingsScope']
  * section's item slot (a feature owns its settings surface).
  * @param ctx - client cordis context.
  */
-export function apply(ctx: ClientContext): void {
+export function apply(ctx: ClientContext, config: Config = Config({})): void {
   const host = ctx.settingsScope.bind<LocaleSettings>({ namespace: LOCALE_SETTINGS_NAMESPACE })
-  const locale = new LocaleRuntime(ctx, host)
+  const locale = new LocaleRuntime(ctx, host, config)
   locale.register(COMMON_NS, { zh, en })
   locale.register(SETTINGS_NS, { zh: settingsZh, en: settingsEn })
   ctx.provide('locale', locale)
@@ -571,12 +616,14 @@ export function apply(ctx: ClientContext): void {
       setLocale: (id) => { locale.setLocale(id) },
     }
   }
-  ctx.slots.inject('settings.general.item', () => ctx.slots.register({
-    name: 'settings.general.item',
-    id: 'language',
-    order: 0,
-    store,
-    locale: SETTINGS_NS,
-    inject: injected,
-  }, LanguageRow))
+  if (config.showLanguageSetting !== false) {
+    ctx.slots.inject('settings.general.item', () => ctx.slots.register({
+      name: 'settings.general.item',
+      id: 'language',
+      order: 0,
+      store,
+      locale: SETTINGS_NS,
+      inject: injected,
+    }, LanguageRow))
+  }
 }

@@ -25,7 +25,7 @@ Use `dsh-client-locale` to switch the web GUI between the shipped English and Ch
 <a id="use-this-package"></a>
 ## Use this package
 
-Use it wherever the web GUI needs a language switch or translated copy: the shipped settings row covers users, and plugin authors register their own dictionaries. Nothing needs configuration to mount — the package activates with the client tree.
+Use it wherever the web GUI needs a language switch or translated copy: the shipped settings row covers users, and plugin authors register their own dictionaries. Without configuration the package retains browser detection, every registered language, and the settings row. A deployment may set `allowedLocales`, `defaultLocale`, and `showLanguageSetting` to constrain that presentation; the allowed list must retain English as the lookup terminal.
 
 ### Choosing a language
 

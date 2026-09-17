@@ -50,6 +50,29 @@ describe('LocaleRuntime', () => {
     expect(t('missing.key')).toBe('missing.key')
   })
 
+  it('enforces an English-only deployment policy over browser and stored preferences', () => {
+    const host = stubSettingsScope<LocaleSettings>()
+    host.publish({ status: 'ready', value: { preference: 'zh' } })
+    const ctx = new Context()
+    const svc = new LocaleRuntime(ctx, host.scope, {
+      allowedLocales: ['en'],
+      defaultLocale: 'en',
+    })
+    expect(svc.getLocale()).toMatchObject({ active: 'en', locales: [{ id: 'en' }] })
+    expect(() => svc.setLocale('zh')).toThrow('not registered')
+    expect(() => svc.addLanguage({ id: 'fr', label: 'Français', fallback: 'en' }))
+      .toThrow('not allowed by the deployment policy')
+  })
+
+  it('rejects deployment policies without English or with an unavailable default', () => {
+    const ctx = new Context()
+    expect(() => new LocaleRuntime(ctx, undefined, { allowedLocales: ['zh'] }))
+      .toThrow('must include "en"')
+    expect(() => new LocaleRuntime(ctx, undefined, {
+      allowedLocales: ['en', 'fr'], defaultLocale: 'fr',
+    })).toThrow('not an allowed built-in locale')
+  })
+
   it('falls through to the common vocabulary after the namespace misses (production keys)', () => {
     const { svc } = make()
     // The shipped common pair is registered by apply; the bench registers it

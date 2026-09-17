@@ -20,6 +20,8 @@ User changes update the live service synchronously and queue a `settings.mutate`
 
 The Client keeps Host persistence disabled on non-loopback pages, so their preferences remain process-local even though Connection authenticates the complete API. Dynamic third-party theme ids remain in-process extensions outside the built-in Host schema; removing one resets the live registry without replacing the last durable built-in preference.
 
+A deployment may also constrain the Locale client with an allowed definition list, a fixed default, and an option to hide the Language settings row. A stored preference outside that allowed list is ignored, not deleted: the deployment policy controls the live UI while preserving the durable user value for another deployment that permits it.
+
 ## Alternatives considered
 
 **Keep `localStorage` and copy values between ports.** One origin cannot enumerate another origin's storage, and a Host relay would recreate the settings service around a browser-specific format.
@@ -37,6 +39,8 @@ The Client keeps Host persistence disabled on non-loopback pages, so their prefe
 ## Consequences
 
 Appearance, Language, and busy-Enter choices follow the DSH user home across reloads, ports, and loopback origins. Direct edits to `settings.yaml` converge through the existing invalidation stream, while legacy `dsh.theme`, `dsh.locale`, and `dsh.conversation.busyEnter` entries are neither read nor written.
+
+When a deployment restricts locales, only allowed definitions can become active or selectable. Hiding the Language row removes the user-facing selector but does not alter the stored Host document.
 
 Boot may briefly show the domain default before the background read settles. A transient read failure keeps that default or the last good in-process value; reconnect retries. A write rejection can visibly restore the durable preference after the immediate local change.
 

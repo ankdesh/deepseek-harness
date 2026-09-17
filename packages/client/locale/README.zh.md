@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-只要 web GUI 需要语言切换或翻译文案就使用它：已发布的设置行覆盖用户侧，插件作者则注册自己的字典。挂载无需任何配置——本包随客户端树一起激活。
+只要 web GUI 需要语言切换或翻译文案就使用它：已发布的设置行覆盖用户侧，插件作者则注册自己的字典。没有配置时，本包保留浏览器检测、所有已注册语言和设置行。部署可以设置 `allowedLocales`、`defaultLocale` 与 `showLanguageSetting` 来约束这种呈现；允许列表必须保留英文作为查找终点。
 
 ### 选择语言
 
