@@ -16,7 +16,7 @@
 
 ## 开发接口
 
-完成[主机端构建](development.zh.md)后，产品包装脚本设置独立的 `DSH_HOME`，并调用本仓库的 `node scripts/product-runtime.mjs dev PRODUCT_DIRECTORY [PROFILE]`。单包组合产品在包清单中声明 `dsh.bundle.patch`。分层产品在 `harness.product.json` 中声明 `defaultProfile` 和 `profiles` 对象；每个配置档提供有序 `bundles` 列表、相对于产品目录的 `localBundles` 目录，以及可选的 `patchReload` 策略。Harness 依赖链接到本仓库；产品自己的依赖必须已安装。启动脚本准备所有已声明配置档，启动指定或默认配置档，转发终止信号并等待子进程退出。
+完成[主机端构建](development.zh.md)后，产品包装脚本设置独立的 `DSH_HOME`，并调用本仓库的 `node scripts/product-runtime.mjs dev PRODUCT_DIRECTORY [PROFILE] [...PROFILE_ARGS]`。单包组合产品在包清单中声明 `dsh.bundle.patch`。分层产品在 `harness.product.json` 中声明 `defaultProfile` 和 `profiles` 对象；每个配置档提供有序 `bundles` 列表、相对于产品目录的 `localBundles` 目录，以及可选的 `patchReload` 策略。Harness 依赖链接到本仓库；产品自己的依赖必须已安装。启动脚本准备所有已声明配置档，启动指定或默认配置档，把尾随参数转发给该配置档，转发终止信号并等待子进程退出。默认运行目录是产品目录，也可以通过 `DSH_PRODUCT_RUN_CWD` 选择现有 workspace 目录。
 
 共享配置档辅助函数为一个具名配置档更新托管链接和清单。它验证每个本地包组合，要求有序层列表包含所有本地包组合，保留现有用户补丁，并拒绝替换托管链接位置上的真实目录。每个产品都需要独立的状态目录。
 

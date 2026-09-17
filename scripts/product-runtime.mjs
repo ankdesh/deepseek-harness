@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { prepareProductProfile } from './product-profile.mjs';
 
 const harness = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const [mode, productArg, requestedProfile] = process.argv.slice(2);
+const [mode, productArg, requestedProfile, ...profileArgs] = process.argv.slice(2);
 if (mode !== 'dev' || !productArg) throw new Error('Usage: node scripts/product-runtime.mjs dev PRODUCT_DIRECTORY [PROFILE]');
 const product = resolve(productArg);
 const manifest = JSON.parse(readFileSync(join(product, 'package.json'), 'utf8'));
@@ -77,6 +77,8 @@ for (const [name, profile] of profiles) {
 }
 const bin = join(harness, 'apps/cli/lib/bin.js');
 if (!existsSync(bin)) throw new Error('Build the Harness host runtime first: pnpm run build:native-system && pnpm run build:lib:host');
-const child = spawn(process.execPath, [bin, '--profile', profileName], { cwd: product, env: process.env, stdio: 'inherit' });
+const runCwd = process.env.DSH_PRODUCT_RUN_CWD ? resolve(process.env.DSH_PRODUCT_RUN_CWD) : product;
+if (!existsSync(runCwd)) throw new Error(`Product run directory does not exist: ${runCwd}`);
+const child = spawn(process.execPath, [bin, '--profile', profileName, ...profileArgs], { cwd: runCwd, env: process.env, stdio: 'inherit' });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));
 child.on('exit', code => { process.exitCode = code || 0; });

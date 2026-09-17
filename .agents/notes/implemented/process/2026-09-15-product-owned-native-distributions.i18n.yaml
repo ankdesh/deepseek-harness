@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-15-product-owned-native-distributions.md
-2026-09-15-product-owned-native-distributions.md: 99298b3929dce402960b8dc3e9679b4792cdabc4
-2026-09-15-product-owned-native-distributions.zh.md: 2ea7cb15efc1db49dec5b55c38434e9284ba93c6
+2026-09-15-product-owned-native-distributions.md: 92abbf501afa120849a2ac2690c99d1409fbe711
+2026-09-15-product-owned-native-distributions.zh.md: 09f6363295588c3b17f048d87e9732b2452340b6
