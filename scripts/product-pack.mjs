@@ -33,7 +33,23 @@ for (const file of globSync('lib/*.js', { cwd: cli })) {
   visit(source);
 }
 if (!cliImports.has('@deepseek-ai/dsh-app-boot')) throw new Error('Missing built dsh profile boot import; rebuild the host runtime');
+const harnessPackages = new Map();
+for (const group of ['vendor', 'apps', 'native/system/packages', 'packages']) {
+  for (const entry of readdirSync(join(harness, group), { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const directory = join(harness, group, entry.name);
+    const candidates = group === 'packages'
+      ? readdirSync(directory, { withFileTypes: true }).filter(candidate => candidate.isDirectory()).map(candidate => join(directory, candidate.name))
+      : [directory];
+    for (const candidate of candidates) {
+      if (!existsSync(join(candidate, 'package.json'))) continue;
+      harnessPackages.set(json(join(candidate, 'package.json')).name, realpathSync(candidate));
+    }
+  }
+}
 function locate(name, from) {
+  const pinned = harnessPackages.get(name);
+  if (pinned !== undefined) return pinned;
   for (let dir = from; ; dir = dirname(dir)) {
     const candidate = join(dir, 'node_modules', name);
     if (existsSync(join(candidate, 'package.json'))) return realpathSync(candidate);

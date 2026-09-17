@@ -26,7 +26,7 @@
 
 产品包装脚本调用 `node scripts/product-pack.mjs PRODUCT_DIRECTORY NEW_OUTPUT_DIRECTORY`。目标目录必须尚不存在。产品提供含有 `commit` 和 `node` 的 `harness.lock.json`，以及含有 `schemaVersion: 1` 和产品相对路径数组 `releaseFiles` 的 `harness.product.json`。提交标识必须与仓库 HEAD 一致。
 
-打包器保留已构建的启动器代码，仅将复制的依赖清单缩减为已构建 CLI 导入的包。它遍历已安装依赖、必需的对等依赖，以及与主机平台兼容的可用可选依赖。所选包保留独立依赖链接；根目录包表也支持 Cordis 的裸包导入。构建后的 `lib` 目录保持完整，因为运行时导出可能引用 `lib/types` 下的编译文件。
+打包器保留已构建的启动器代码，仅将复制的依赖清单缩减为已构建 CLI 导入的包。它遍历已安装依赖、必需的对等依赖，以及与主机平台兼容的可用可选依赖。凡包名属于固定的 Harness checkout，都始终从该 checkout 解析，即使产品安装了注册表副本，因此同一发布包不会混用不同代的 Harness 包。所选包保留独立依赖链接；根目录包表也支持 Cordis 的裸包导入。构建后的 `lib` 目录保持完整，因为运行时导出可能引用 `lib/types` 下的编译文件。
 
 输出包含产品包、所选运行时包、产品分发文件、`deployment/harness-profile.mjs`、分发元数据、包许可证说明、文件校验和及同级 `.tar.gz`。内部包链接保持在分发目录内。目标主机需要受支持的 Node 运行时及产品声明的原生前置依赖。启动时不安装包，也不构建 JavaScript。
 
