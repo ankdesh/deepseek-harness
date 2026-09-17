@@ -523,6 +523,42 @@ describe('UiSession pending interactions', () => {
   })
 })
 
+describe('UiSession new Session intents', () => {
+  it('runs handlers by priority until one accepts the intent', async () => {
+    const ctx = new Context()
+    const bench = createSessionsBench(ctx)
+    const service = createUiSession(ctx, bench)
+    const calls: string[] = []
+    service.registerNewSessionHandler({
+      id: 'fallback',
+      priority: 10,
+      handle: () => { calls.push('fallback'); return true },
+    })
+    service.registerNewSessionHandler({
+      id: 'product',
+      priority: -10,
+      handle: async (intent) => { calls.push(intent.source); return false },
+    })
+
+    await service.startNewSession({ source: 'sidebar-button' })
+    expect(calls).toEqual(['sidebar-button', 'fallback'])
+  })
+
+  it('removes disposed handlers and rejects duplicate or unhandled contributions', async () => {
+    const ctx = new Context()
+    const bench = createSessionsBench(ctx)
+    const service = createUiSession(ctx, bench)
+    const dispose = service.registerNewSessionHandler({ id: 'product', handle: () => true })
+    expect(() => service.registerNewSessionHandler({ id: 'product', handle: () => true }))
+      .toThrow("duplicate id 'product'")
+    expect(() => service.registerNewSessionHandler({ id: ' ', handle: () => true }))
+      .toThrow('id must not be empty')
+    dispose()
+    await expect(service.startNewSession({ source: 'sidebar-brand' }))
+      .rejects.toThrow('no handler accepted sidebar-brand')
+  })
+})
+
 describe('ui-session apply', () => {
   it('provides the root sources and installs the Session scope adapter', () => {
     const ctx = new Context()

@@ -9,9 +9,6 @@
   ],
   "references": [
     {
-      "path": "../../api/workspace-controller/tsconfig.client.json"
-    },
-    {
       "path": "../../../vendor/cordis"
     },
     {

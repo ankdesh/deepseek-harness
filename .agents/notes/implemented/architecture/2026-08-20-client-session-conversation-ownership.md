@@ -244,6 +244,8 @@ These combined facts do not enter `WorkspaceSnapshot`:
 
 Initial selection, blank-Session reuse, new-session navigation, concurrent-create coalescing, and navigation after archival are UI navigation policy. That policy may read both `ctx.workspaces` and `ctx.sessions` at decision time, but it issues only Controller commands and selection actions and does not publish a combined snapshot.
 
+`client/ui-session` owns the product-neutral global New Session intent router. Callers describe the origin of an intent, registered handlers run in ascending priority order, and the first handler that returns `true` consumes it. `client/ui-workspace` registers the stock Workspace-aware behavior as the default handler, so a product can install an earlier handler without replacing the sidebar or shell.
+
 Directory pickers, directory browsing, and `openPath` are separate directory capabilities and do not enter the Workspace Controller.
 
 ## UI Conversation

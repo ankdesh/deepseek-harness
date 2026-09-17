@@ -60,6 +60,13 @@ async function bench() {
     binding,
     fork,
   } as never)
+  const newSessionHandlers: Array<{ handle: () => boolean | Promise<boolean> }> = []
+  ctx.provide('uiSession', {
+    registerNewSessionHandler: vi.fn((handler) => {
+      newSessionHandlers.push(handler)
+      return () => {}
+    }),
+  } as never)
   const pickDirectory = vi.fn(() => Promise.resolve({ ok: true as const, value: '/projects/picked' }))
   const directoryPicker = { pick: pickDirectory }
   Object.assign(new TestRemote(ctx), { directoryPicker })
@@ -72,7 +79,7 @@ async function bench() {
   ctx.provide('locale', locale)
   return {
     ctx, slots: ctx.get('slots') as SlotRegistry, locale, create, rename,
-    open, clear, selectPanel, search, renameSession, binding, fork, pickDirectory,
+    open, clear, selectPanel, search, renameSession, binding, fork, pickDirectory, newSessionHandlers,
   }
 }
 
@@ -92,6 +99,7 @@ describe('ui-workspace apply', () => {
   it('declares the services it drives', () => {
     expect(inject).toEqual([
       'slots', 'sessions', 'workspaces', 'locale', 'remote', 'remote.directoryPicker', 'layout',
+      'uiSession',
     ])
   })
 
@@ -118,6 +126,9 @@ describe('ui-workspace apply', () => {
     declare(b.slots, 'sidebar.workspaces', 'conversation.hero.workspace')
     await b.ctx.plugin({ inject: [...inject], apply }).await()
     const startSession = vi.spyOn(b.ctx.uiWorkspace, 'startSession').mockImplementation(() => undefined)
+    expect(b.newSessionHandlers).toHaveLength(1)
+    expect(await b.newSessionHandlers[0]!.handle()).toBe(true)
+    expect(startSession).toHaveBeenCalledWith()
 
     const browser = (b.slots.entries('sidebar.workspaces')[0]!.inject as () => WorkspaceBrowserInjected)()
     // Both arms delegate to the shared Session navigation action.

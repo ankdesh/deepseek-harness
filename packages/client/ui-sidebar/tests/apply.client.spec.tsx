@@ -31,9 +31,9 @@ async function bench(declare = true) {
   if (ctx === undefined) throw new Error('the sidebar fixture owner did not activate')
   await ctx.plugin(SlotRegistry).await()
   const layout = { toggleSidebar: vi.fn(), selectPanel: vi.fn() }
-  const uiWorkspace = { startSession: vi.fn() }
+  const uiSession = { startNewSession: vi.fn(async () => undefined) }
   ctx.provide('layout', layout)
-  ctx.provide('uiWorkspace', uiWorkspace as never)
+  ctx.provide('uiSession', uiSession as never)
   ctx.provide('locale', new LocaleRuntime(ctx))
   const slots = ctx.get('slots') as SlotRegistry
   if (declare) {
@@ -45,7 +45,7 @@ async function bench(declare = true) {
       SidebarFrame,
     )
   }
-  return { ctx, slots, layout, uiWorkspace }
+  return { ctx, slots, layout, uiSession }
 }
 
 describe('ui-sidebar apply', () => {
@@ -54,7 +54,7 @@ describe('ui-sidebar apply', () => {
   })
 
   it('declares only the services it uses', () => {
-    expect(inject).toEqual(['slots', 'layout', 'uiWorkspace', 'locale'])
+    expect(inject).toEqual(['slots', 'layout', 'uiSession', 'locale'])
   })
 
   it('registers the shell and declares its child seats', async () => {
@@ -73,11 +73,10 @@ describe('ui-sidebar apply', () => {
     expect(Object.keys(injected)).toEqual(['startSession', 'toggleSidebar', 'selectPanel', 'hooks'])
     expect(injected.hooks.panels.getSnapshot()).toEqual([])
     expect(b.slots.entries('main')).toEqual([])
-    // Both arms delegate to the Workspace UI's shared New Session action.
-    injected.startSession('workspace' as never)
-    expect(b.uiWorkspace.startSession).toHaveBeenCalledWith('workspace')
-    injected.startSession()
-    expect(b.uiWorkspace.startSession).toHaveBeenLastCalledWith(undefined)
+    await injected.startSession('sidebar-brand')
+    expect(b.uiSession.startNewSession).toHaveBeenCalledWith({ source: 'sidebar-brand' })
+    await injected.startSession('sidebar-button')
+    expect(b.uiSession.startNewSession).toHaveBeenLastCalledWith({ source: 'sidebar-button' })
     injected.toggleSidebar()
     expect(b.layout.toggleSidebar).toHaveBeenCalledOnce()
     const panelId = 'custom-panel' as MainPanelId

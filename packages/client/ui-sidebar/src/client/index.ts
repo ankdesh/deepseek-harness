@@ -30,18 +30,13 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 /** Dictionary namespace owned by this plugin. */
 const NS = 'sidebar'
 
-interface WorkspaceNavigation {
-  startSession(workspaceId?: Parameters<SidebarRootInjected['startSession']>[0]): void
-}
-
 /** Services required by the sidebar plugin. */
-export const inject = ['slots', 'layout', 'uiWorkspace', 'locale']
+export const inject = ['slots', 'layout', 'uiSession', 'locale']
 
 /** Registers the sidebar shell and its service callbacks.
  * @param ctx - Client root context.
  */
 export function apply(ctx: ClientContext): void {
-  const workspaceNavigation = ctx.get('uiWorkspace') as unknown as WorkspaceNavigation
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-sidebar: dictionaries')
   const panels = createSnapshotStore<readonly SidebarPanelMetadata[]>([])
   const syncPanels = (): void => {
@@ -61,9 +56,7 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.subscribe(syncPanels), 'ui-sidebar: panel labels')
 
   const injectProps = (): SidebarRootInjected => ({
-    // The shell's New Session button rides the Workspace UI's shared action
-    // (current Session Workspace, then recent Workspace).
-    startSession: (workspaceId) => { workspaceNavigation.startSession(workspaceId) },
+    startSession: source => ctx.uiSession.startNewSession({ source }),
     toggleSidebar: () => { ctx.layout.toggleSidebar() },
     selectPanel: (id) => { ctx.layout.selectPanel(id) },
     hooks: { panels },

@@ -185,7 +185,11 @@ export function SidebarRoot({
             type="button"
             className={clsx(css.brand, css.wide)}
             aria-label={t('session.new.label')}
-            onClick={() => { startSession() }}
+            onClick={() => {
+              void startSession('sidebar-brand').catch(
+                (reason) => { console.warn('new session failed:', reason) },
+              )
+            }}
           >
             <span className={css.brandIdentity} aria-hidden="true">
               <span className={css.brandMark}>
@@ -232,7 +236,11 @@ export function SidebarRoot({
           type="button"
           className={css.newSession}
           aria-label={t('session.new.label')}
-          onClick={() => { startSession() }}
+          onClick={() => {
+            void startSession('sidebar-button').catch(
+              (reason) => { console.warn('new session failed:', reason) },
+            )
+          }}
         >
           <IconNewChatOutline16 size={wide ? 14 : 18} />
           {wide && <span className={clsx(css.newSessionLabel, css.wide)}>{t('session.new')}</span>}

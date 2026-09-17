@@ -61,6 +61,29 @@ export type PendingInteractionPublisher<T extends SessionPendingInteractionBase>
   delegate: () => Promise<void>,
 ) => () => void
 
+/** UI origin that requested a new Session. */
+export type NewSessionIntentSource = 'sidebar-brand' | 'sidebar-button'
+
+/** Product-neutral request to begin a new Session flow. */
+export interface NewSessionIntent {
+  /** Control that initiated the flow. */
+  readonly source: NewSessionIntentSource
+}
+
+/** One ordered new-Session policy contribution. */
+export interface NewSessionHandler {
+  /** Stable contribution identity; duplicate live ids are rejected. */
+  readonly id: string
+  /** Lower values run first. */
+  readonly priority?: number
+  /**
+   * Handle the intent or delegate to the next contribution.
+   * @param intent - initiating UI action.
+   * @returns true when this contribution owns the flow.
+   */
+  readonly handle: (intent: NewSessionIntent) => boolean | Promise<boolean>
+}
+
 interface PendingInteractionEntry<T> {
   readonly interaction: T
   readonly delegate: () => Promise<void>
@@ -219,6 +242,7 @@ export class UiSession extends Service {
   private currentBinding: StandardSourceBinding
   private readonly currentListeners = new Set<() => void>()
   private readonly pendingDomains: RuntimePendingDomain[] = []
+  private readonly newSessionHandlers: NewSessionHandler[] = []
   private pendingSnapshot: ReadonlyMap<SessionId, SessionPendingInteractionBase> = new Map()
   private readonly pendingListeners = new Set<() => void>()
   /** Root source of pending UI interactions, independent from Controller snapshots. */
@@ -320,6 +344,40 @@ export class UiSession extends Service {
       }
     }, 'uiSession.registerPendingInteraction()')
     return (interaction, delegate) => domain.publish(interaction, delegate)
+  }
+
+  /**
+   * Register an ordered new-Session policy contribution for the caller's plugin lifetime.
+   * @param handler - stable identity, priority, and ownership decision.
+   * @returns disposer removing this contribution.
+   */
+  registerNewSessionHandler(handler: NewSessionHandler): () => void {
+    if (handler.id.trim() === '') throw new Error('uiSession.registerNewSessionHandler: id must not be empty')
+    if (this.newSessionHandlers.some(candidate => candidate.id === handler.id)) {
+      throw new Error(`uiSession.registerNewSessionHandler: duplicate id '${handler.id}'`)
+    }
+    const dispose = this.ctx.effect(() => {
+      this.newSessionHandlers.push(handler)
+      this.newSessionHandlers.sort((left, right) => (left.priority ?? 0) - (right.priority ?? 0))
+      return () => {
+        const index = this.newSessionHandlers.indexOf(handler)
+        if (index !== -1) this.newSessionHandlers.splice(index, 1)
+      }
+    }, `uiSession.registerNewSessionHandler(${handler.id})`)
+    return () => { void dispose() }
+  }
+
+  /**
+   * Dispatch a new-Session intent to the first contribution that accepts it.
+   * @param intent - initiating UI action.
+   * @returns after the accepting contribution completes.
+   * @throws when no active contribution accepts the intent.
+   */
+  async startNewSession(intent: NewSessionIntent): Promise<void> {
+    for (const handler of [...this.newSessionHandlers]) {
+      if (await handler.handle(intent)) return
+    }
+    throw new Error(`uiSession.startNewSession: no handler accepted ${intent.source}`)
   }
 
   private rebuildBindings(): void {

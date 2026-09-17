@@ -8,7 +8,7 @@ kind: "package-reference"
 
 ## 概述
 
-面向会话控制器状态的 React 与 Slot 适配器。本包在 root scope 提供会话列表和 pending-interaction 钩子，物化逐会话钩子与 prop，并拥有标准 `SessionProvider` 渲染行为，但不接管会话 transport 或 lifecycle 状态。当浏览器功能需要通过标准 React prop 和钩子读取会话状态时，请使用它。
+面向会话控制器状态的 React 与 Slot 适配器。本包在 root scope 提供会话列表和 pending-interaction 钩子，物化逐会话钩子与 prop，拥有标准 `SessionProvider` 渲染行为，并通过有序处理器路由不带产品语义的 New Session 意图，但不接管会话 transport 或 lifecycle 状态。当浏览器功能需要通过标准 React prop 和钩子读取会话状态，或产品需要替换默认新会话流程时，请使用它。
 
 ## 目录
 

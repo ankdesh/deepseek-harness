@@ -9,7 +9,7 @@
  */
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
-import type { WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/client'
+import type { NewSessionIntentSource } from '@deepseek-ai/dsh-client-ui-session/client'
 import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
@@ -113,11 +113,11 @@ export interface SidebarFooterActionOwnerProps {
  */
 export type SidebarRootInjected = {
   /**
-   * Start a New Session: with a workspace, reuse-or-create its blank session
-   * and open it; without one, inherit the current Session Workspace, then the
-   * recent Workspace, or clear into the New Session pure view when none exist.
+   * Dispatch a New Session intent through the assembled product policy.
+   * @param source - sidebar control that initiated the request.
+   * @returns completion after one policy contribution accepts the request.
    */
-  startSession: (workspaceId?: WorkspaceId) => void
+  startSession: (source: NewSessionIntentSource) => Promise<void>
   /** Toggle the sidebar column through the layout service. */
   toggleSidebar: () => void
   /** Select the global panel addressed by a sidebar row. */
