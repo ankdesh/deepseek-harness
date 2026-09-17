@@ -60,6 +60,12 @@ test('a named layered profile links every local bundle in declared order', () =>
         name, version: '1.0.0', dsh: { bundle: { patch: './cordis.patch.yml' } },
       }));
     }
+    for (const name of ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app']) {
+      const directory = join(root, 'node_modules', name); mkdirSync(directory, { recursive: true });
+      writeFileSync(join(directory, 'package.json'), JSON.stringify({
+        name, version: '1.0.0', dsh: { bundle: { patch: './cordis.patch.yml' } },
+      }));
+    }
     const home = join(dir, 'state');
     prepareProductProfile(root, home, {
       profileName: 'spec2gds-web',
@@ -75,6 +81,14 @@ test('a named layered profile links every local bundle in declared order', () =>
     });
     assert.equal(realpathSync(join(profile, 'node_modules/@test/core')), core);
     assert.equal(realpathSync(join(profile, 'node_modules/@test/web')), web);
+    assert.equal(realpathSync(join(profile, 'node_modules/@deepseek-ai/dsh-base')), join(root, 'node_modules/@deepseek-ai/dsh-base'));
+    assert.equal(realpathSync(join(profile, 'node_modules/@deepseek-ai/dsh-web-app')), join(root, 'node_modules/@deepseek-ai/dsh-web-app'));
+    assert.deepEqual(manifest.dependencies, {
+      '@deepseek-ai/dsh-base': '1.0.0',
+      '@deepseek-ai/dsh-web-app': '1.0.0',
+      '@test/core': '1.0.0',
+      '@test/web': '1.0.0',
+    });
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -87,5 +101,17 @@ test('a local bundle omitted from the ordered layers is rejected', () => {
     assert.throws(() => prepareProductProfile(dir, join(dir, 'state'), {
       bundles: ['@deepseek-ai/dsh-base'],
     }), /absent from the ordered profile layers/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('an external profile layer must be installed by the product', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'product-profile-'));
+  try {
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({
+      name: '@test/product', version: '1.0.0', dsh: { bundle: { patch: './patch.yml' } },
+    }));
+    assert.throws(() => prepareProductProfile(dir, join(dir, 'state'), {
+      bundles: ['@deepseek-ai/dsh-base', '@test/product'],
+    }), /neither local nor installed/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

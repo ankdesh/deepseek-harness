@@ -24,12 +24,12 @@ function replaceManagedLink(target, path) {
 }
 
 /**
- * Prepare one product profile and its local bundle links; preserve an existing user patch.
+ * Prepare one product profile and its bundle links; preserve an existing user patch.
  * @param {string} product - Absolute product root package directory.
  * @param {string} home - Absolute product-owned Harness state directory.
  * @param {ProductProfileOptions} [options] - Profile identity, ordered layers, and local bundle directories.
  * @returns {void} Writes the profile manifest and managed link.
- * @throws If a local package is not a bundle, a layer is missing, or an unmanaged path occupies a managed link.
+ * @throws If a package is not a bundle, a layer is missing, or an unmanaged path occupies a managed link.
  */
 export function prepareProductProfile(product, home, options = {}) {
   const profileName = options.profileName ?? 'product';
@@ -43,20 +43,33 @@ export function prepareProductProfile(product, home, options = {}) {
   if (bundles.length === 0 || bundles.some(name => typeof name !== 'string' || name.trim() === '')) {
     throw new Error('Product profile bundles must be a non-empty list of package names');
   }
+  if (new Set(bundles).size !== bundles.length) throw new Error('Product profile bundle names must be unique');
   for (const name of localNames) {
     if (!bundles.includes(name)) throw new Error(`Local product bundle ${name} is absent from the ordered profile layers`);
   }
+  const localByName = new Map(locals.map(bundle => [bundle.manifest.name, bundle]));
+  const selected = bundles.map(name => {
+    const local = localByName.get(name);
+    if (local !== undefined) return local;
+    const installed = join(product, 'node_modules', name);
+    if (!existsSync(join(installed, 'package.json'))) {
+      throw new Error(`Product profile bundle ${name} is neither local nor installed by the product`);
+    }
+    const bundle = readBundle(installed);
+    if (bundle.manifest.name !== name) throw new Error(`Installed product profile bundle ${name} has package name ${bundle.manifest.name}`);
+    return bundle;
+  });
   const patchReload = options.patchReload ?? 'startup';
   if (patchReload !== 'live' && patchReload !== 'startup') throw new Error('Product profile patchReload must be "live" or "startup"');
 
   const profile = join(home, 'profiles', profileName); mkdirSync(profile, { recursive: true });
-  for (const bundle of locals) {
+  for (const bundle of selected) {
     replaceManagedLink(bundle.directory, join(profile, 'node_modules', bundle.manifest.name));
   }
   writeFileSync(join(profile, 'package.json'), JSON.stringify({
     name: `${profileName}-product-profile`,
     private: true,
-    dependencies: Object.fromEntries(locals.map(bundle => [bundle.manifest.name, bundle.manifest.version])),
+    dependencies: Object.fromEntries(selected.map(bundle => [bundle.manifest.name, bundle.manifest.version])),
     dsh: { profile: { bundles, patchReload } },
   }, null, 2) + '\n');
   const patch = join(profile, 'cordis.patch.yml');
