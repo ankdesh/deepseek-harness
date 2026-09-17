@@ -69,7 +69,8 @@ add(product); add(cli);
 for (const node of nodes.values()) {
   const { source, dest, manifest } = node;
   mkdirSync(dest, { recursive: true });
-  const workspace = source.startsWith(`${harness}${sep}`) && !source.includes(`${sep}node_modules${sep}`) || source === product;
+  const workspace = source.startsWith(`${harness}${sep}`) && !source.includes(`${sep}node_modules${sep}`)
+    || source === product || source.startsWith(`${product}${sep}`);
   const entries = workspace ? new Set(['lib', ...((manifest.files || []).flatMap(pattern => globSync(pattern, { cwd: source }))), ...readdirSync(source).filter(name => /^(license|licence|notice|copying|readme)(\.|$)/i.test(name))]) : new Set(readdirSync(source).filter(name => name !== 'node_modules'));
   for (const entry of entries) {
     if (entry === 'package.json' || !existsSync(join(source, entry))) continue;

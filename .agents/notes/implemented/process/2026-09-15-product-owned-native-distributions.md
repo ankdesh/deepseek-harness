@@ -10,7 +10,7 @@ Independent applications need local Harness changes during development and a sma
 
 ## Decision
 
-The fork owns generic development linking, profile preparation, and native dependency assembly. Each product owns its profile bundle and deployment recipe. Both modes launch the ordinary dsh CLI. The packager copies built CLI code unchanged and derives its deployment dependency list from the built module imports.
+The fork owns generic development linking, named profile preparation, and native dependency assembly. Each product owns its ordered profile bundles and deployment recipe. A recipe may declare several profiles over the same product package graph, including distinct browser and one-shot modes. Every mode launches the ordinary dsh CLI. The packager copies built CLI code unchanged and derives its deployment dependency list from the built module imports.
 
 The package graph retains local dependency links and exposes selected packages at the installation root for Cordis imports. The packager preserves complete built lib directories, including runtime-referenced compiled files in lib/types. It rejects a mismatched Harness commit or an existing output directory. Release metadata records the source commit, dirty state, lock hash, packager hash, platform, and package roster.
 

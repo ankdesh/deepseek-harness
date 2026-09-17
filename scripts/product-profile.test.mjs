@@ -48,3 +48,44 @@ test('a dangling link is repaired without following its old target', () => {
     assert.equal(realpathSync(join(modules, 'product')), dir);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('a named layered profile links every local bundle in declared order', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'product-profile-'));
+  try {
+    const root = join(dir, 'product'); mkdirSync(root);
+    const core = join(root, 'core'); const web = join(root, 'web');
+    for (const [directory, name] of [[core, '@test/core'], [web, '@test/web']]) {
+      mkdirSync(directory);
+      writeFileSync(join(directory, 'package.json'), JSON.stringify({
+        name, version: '1.0.0', dsh: { bundle: { patch: './cordis.patch.yml' } },
+      }));
+    }
+    const home = join(dir, 'state');
+    prepareProductProfile(root, home, {
+      profileName: 'spec2gds-web',
+      bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@test/core', '@test/web'],
+      localBundles: [core, web],
+      patchReload: 'live',
+    });
+    const profile = join(home, 'profiles/spec2gds-web');
+    const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8'));
+    assert.deepEqual(manifest.dsh.profile, {
+      bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@test/core', '@test/web'],
+      patchReload: 'live',
+    });
+    assert.equal(realpathSync(join(profile, 'node_modules/@test/core')), core);
+    assert.equal(realpathSync(join(profile, 'node_modules/@test/web')), web);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a local bundle omitted from the ordered layers is rejected', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'product-profile-'));
+  try {
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({
+      name: '@test/product', version: '1.0.0', dsh: { bundle: { patch: './patch.yml' } },
+    }));
+    assert.throws(() => prepareProductProfile(dir, join(dir, 'state'), {
+      bundles: ['@deepseek-ai/dsh-base'],
+    }), /absent from the ordered profile layers/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

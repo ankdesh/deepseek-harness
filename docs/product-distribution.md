@@ -4,7 +4,7 @@ English | [中文](product-distribution.zh.md)
 
 ## Summary
 
-Develop a product against a local Harness checkout and assemble a native application release containing only its selected runtime packages. The product owns its bundle, UI, tools, configuration, dependency locks, and deployment scripts. The normal `dsh --profile product` command launches both modes.
+Develop a product against a local Harness checkout and assemble a native application release containing only its selected runtime packages. The product owns its bundles, UI, tools, configuration, dependency locks, and deployment scripts. Every product mode launches through a named `dsh` profile.
 
 ## Table of Contents
 
@@ -16,9 +16,9 @@ Develop a product against a local Harness checkout and assemble a native applica
 
 ## Development interface
 
-After the [host build](development.md), a product wrapper sets an isolated `DSH_HOME` and invokes `node scripts/product-runtime.mjs dev PRODUCT_DIRECTORY` from this checkout. The product manifest declares `dsh.bundle.patch` and its direct runtime dependencies. Harness dependencies link to this checkout; product-owned dependencies must already be installed. The launcher forwards termination signals and waits for the child process to exit.
+After the [host build](development.md), a product wrapper sets an isolated `DSH_HOME` and invokes `node scripts/product-runtime.mjs dev PRODUCT_DIRECTORY [PROFILE]` from this checkout. A single-bundle product declares `dsh.bundle.patch` in its package manifest. A layered product declares `defaultProfile` and a `profiles` object in `harness.product.json`; each profile supplies an ordered `bundles` list, product-relative `localBundles` directories, and an optional `patchReload` policy. Harness dependencies link to this checkout; product-owned dependencies must already be installed. The launcher prepares every declared profile, starts the selected or default profile, forwards termination signals, and waits for the child process to exit.
 
-The shared profile helper updates the managed bundle link and manifest. It preserves an existing user patch and refuses to replace a real directory at the managed link. Each product needs a separate state directory.
+The shared profile helper updates the managed links and manifest for one named profile. It validates each local bundle, requires every local bundle in the ordered layer list, preserves an existing user patch, and refuses to replace a real directory at a managed link. Each product needs a separate state directory.
 
 <a id="release-interface"></a>
 
