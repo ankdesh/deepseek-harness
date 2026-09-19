@@ -21,6 +21,7 @@ export const Config: z<Config> = z.object({
   maxInputBytes: SessionTitleLlmConfigFields.maxInputBytes,
   maxOutputTokens: SessionTitleLlmConfigFields.maxOutputTokens,
   timeoutMs: SessionTitleLlmConfigFields.timeoutMs,
+  languagePolicy: SessionTitleLlmConfigFields.languagePolicy,
   provider: SessionTitleLlmConfigFields.provider,
   model: SessionTitleLlmConfigFields.model,
 })

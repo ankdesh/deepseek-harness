@@ -244,7 +244,7 @@ Session 导航状态和 composer takeover 必须读取同一个 effective object
 
 初始选择、blank Session 复用、新建导航、并发创建合并和归档后导航属于 UI navigation policy。该 policy 可以在决定时同时读取 `ctx.workspaces` 与 `ctx.sessions`，但只调用 Controller command 和 selection action，不发布联合 snapshot。
 
-`client/ui-session` 持有产品无关的全局 New Session intent 路由器。调用方描述 intent 的来源，已注册 handler 按优先级升序运行，第一个返回 `true` 的 handler 消费该 intent。`client/ui-workspace` 把原有的 Workspace 感知行为注册为默认 handler，因此产品可以安装更早执行的 handler，而无需替换 sidebar 或 shell。
+`client/ui-session` 持有产品无关的全局 New Session intent 路由器。其可通过声明合并扩展的 intent map 让功能 package 添加来源专用数据，而不与中心实现耦合。调用方描述 intent 的来源，已注册 handler 按优先级升序运行，第一个返回 `true` 的 handler 消费该 intent。`client/ui-workspace` 添加携带所选 Workspace id 的 Workspace intent，并让行操作经过同一 dispatcher。它把原有的 Workspace 感知行为注册为默认 handler，因此产品可以安装更早执行的 handler，而无需替换 sidebar 或 shell。
 
 目录 picker、目录浏览和 `openPath` 属于独立目录能力，不进入 Workspace Controller。
 

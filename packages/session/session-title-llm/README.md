@@ -48,6 +48,7 @@ Every field is required except the paired route override; there are no library d
 | `maxInputBytes` | required | UTF-8 byte ceiling for the final JSON-framed user prompt |
 | `maxOutputTokens` | required | Auxiliary generation token cap |
 | `timeoutMs` | required | End-to-end deadline within the runtime timer limit |
+| `languagePolicy` | `messages` | Use the input language, or force `english` with translation when necessary |
 | `provider`, `model` | optional | Explicit route; both or neither |
 
 -----
@@ -98,7 +99,7 @@ Read these pages when the generation policy is not enough. They move from the se
 
 #### What the model sees
 
-The title model receives a fixed system instruction to return one concise unadorned title in the input language, including the configured word and CJK-character targets. Its one user message contains a JSON array of the exact selected human messages and their seqs.
+The title model receives a fixed system instruction to return one concise unadorned title. `languagePolicy: messages` uses the input language and both configured length targets; `languagePolicy: english` requests English translation when necessary and omits CJK-specific wording. Its one user message contains a JSON array of the exact selected human messages and their seqs.
 
 #### Token effect
 

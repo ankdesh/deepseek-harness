@@ -118,6 +118,17 @@ describe('ui-settings-models apply', () => {
     expect(after.slots.entries('settings.section')).toHaveLength(1)
   })
 
+  it('keeps Models while deployment policy omits product onboarding', async () => {
+    const b = await bench()
+    declare(b.slots)
+    await b.ctx.plugin({ inject: [...inject], apply: (ctx: Context) => apply(ctx, {
+      showTestingNotice: false,
+      showDeepSeekOnboarding: false,
+    }) }).await()
+    expect(b.slots.entries('settings.section')[0]!.component).toBe(ModelsSection)
+    expect(b.slots.entries('settings.onboarding')).toHaveLength(0)
+  })
+
   it('the label thunk follows the active locale without re-registration', async () => {
     const b = await bench()
     declare(b.slots)

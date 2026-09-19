@@ -204,6 +204,17 @@ describe('generateSessionTitleWithLlm', () => {
     })
   })
 
+  it('uses an English-only instruction without CJK-specific wording when requested', async () => {
+    const { ctx, adapter } = await withScript(SCRIPT)
+    const providerRequest = request(ctx)
+    await generateSessionTitleWithLlm(ctx, resolveSessionTitleLlmConfig({
+      ...CONFIG,
+      languagePolicy: 'english',
+    }), providerRequest, providerRequest.messages, TITLE_PROVIDER)
+    expect(adapter.requests[0]!.system).toContain('Write the title in English')
+    expect(adapter.requests[0]!.system).not.toContain('CJK')
+  })
+
   it('requires every deployment limit and a complete optional route pair', () => {
     expect(() => resolveSessionTitleLlmConfig(undefined as never)).toThrow(/configuration is required/)
     expect(() => resolveSessionTitleLlmConfig(null as never)).toThrow(/configuration is required/)
@@ -228,6 +239,8 @@ describe('generateSessionTitleWithLlm', () => {
       .toThrow(/overrides must be non-empty strings/)
     expect(() => resolveSessionTitleLlmConfig({ ...CONFIG, timeoutMs: MAX_TIMER_DELAY_MS + 1 }))
       .toThrow(/timeoutMs must not exceed/)
+    expect(() => resolveSessionTitleLlmConfig({ ...CONFIG, languagePolicy: 'invalid' as never }))
+      .toThrow(/languagePolicy must be messages or english/)
     expect(() => resolveSessionTitleLlmConfig(CONFIG)).not.toThrow()
   })
 

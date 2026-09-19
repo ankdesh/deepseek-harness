@@ -61,6 +61,8 @@ export interface SessionTitleLlmConfig {
   readonly maxOutputTokens: number
   /** End-to-end auxiliary request deadline in milliseconds. */
   readonly timeoutMs: number
+  /** Language policy for generated navigation titles. */
+  readonly languagePolicy?: 'messages' | 'english'
   /** Optional explicit provider route; must be paired with `model`. */
   readonly provider?: string
   /** Optional explicit model id; must be paired with `provider`. */
@@ -77,6 +79,7 @@ export const SessionTitleLlmConfigFields = {
   maxInputBytes: z.number().step(1).min(1).required(),
   maxOutputTokens: z.number().step(1).min(1).required(),
   timeoutMs: z.number().step(1).min(1).max(MAX_TIMER_DELAY_MS).required(),
+  languagePolicy: z.union(['messages', 'english'] as const).default('messages'),
   provider: z.string(),
   model: z.string(),
 }
@@ -91,6 +94,7 @@ const CONFIG_KEYS: ReadonlySet<string> = new Set([
   'maxInputBytes',
   'maxOutputTokens',
   'timeoutMs',
+  'languagePolicy',
   'provider',
   'model',
 ])
@@ -125,6 +129,10 @@ export function resolveSessionTitleLlmConfig(
   assertPositiveInteger('timeoutMs', value.timeoutMs)
   if (value.timeoutMs > MAX_TIMER_DELAY_MS) {
     throw new Error(`session-title-llm: timeoutMs must not exceed ${MAX_TIMER_DELAY_MS}`)
+  }
+  if (value.languagePolicy !== undefined
+    && value.languagePolicy !== 'messages' && value.languagePolicy !== 'english') {
+    throw new Error('session-title-llm: languagePolicy must be messages or english')
   }
   const hasProvider = value.provider !== undefined
   const hasModel = value.model !== undefined
@@ -186,11 +194,16 @@ function resolveRoute(
 
 /** Stable language-aware system instruction shared by both provider plugins. */
 function systemPrompt(config: ResolvedSessionTitleLlmConfig): string {
+  const english = config.languagePolicy === 'english'
   return [
     'Create a concise title for an AI coding-assistant session from the supplied human messages.',
     'Return only the title on one line, **in plain text of natural language**, with no quotes, prefix, explanation, Markdown, XML, or terminal control codes. No code is allowed.',
-    'Use the language of the messages.',
-    `Aim for about ${config.targetWords} words in non-CJK languages or ${config.targetCjkCharacters} CJK characters.`,
+    english
+      ? 'Write the title in English. Translate the meaning of non-English messages when necessary.'
+      : 'Use the language of the messages.',
+    english
+      ? `Aim for about ${config.targetWords} words.`
+      : `Aim for about ${config.targetWords} words in non-CJK languages or ${config.targetCjkCharacters} CJK characters.`,
   ].join('\n')
 }
 

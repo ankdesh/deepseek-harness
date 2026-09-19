@@ -61,14 +61,19 @@ export type PendingInteractionPublisher<T extends SessionPendingInteractionBase>
   delegate: () => Promise<void>,
 ) => () => void
 
+/** Merge-extensible payloads for UI surfaces that can request a new Session. */
+export interface NewSessionIntentMap {
+  'sidebar-brand': Record<never, never>
+  'sidebar-button': Record<never, never>
+}
+
 /** UI origin that requested a new Session. */
-export type NewSessionIntentSource = 'sidebar-brand' | 'sidebar-button'
+export type NewSessionIntentSource = keyof NewSessionIntentMap
 
 /** Product-neutral request to begin a new Session flow. */
-export interface NewSessionIntent {
-  /** Control that initiated the flow. */
-  readonly source: NewSessionIntentSource
-}
+export type NewSessionIntent = {
+  [Source in keyof NewSessionIntentMap]: { readonly source: Source } & NewSessionIntentMap[Source]
+}[keyof NewSessionIntentMap]
 
 /** One ordered new-Session policy contribution. */
 export interface NewSessionHandler {

@@ -60,6 +60,7 @@
         maxInputBytes: 4096
         maxOutputTokens: 64
         timeoutMs: 60000
+        languagePolicy: messages
 
     - id: user-questions
       name: '@deepseek-ai/dsh-user-questions'

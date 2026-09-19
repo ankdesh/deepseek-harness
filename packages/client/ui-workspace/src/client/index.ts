@@ -9,6 +9,7 @@
  * packages/client/AGENTS.md.
  */
 import type { Context } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
 import type { RemoteHostFacts } from '@deepseek-ai/dsh-api-remotes/client'
 import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { IWorkspaces, WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
@@ -52,6 +53,26 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 /** Dictionary namespace owned by this plugin. */
 const NS = 'workspace'
 
+declare module '@deepseek-ai/dsh-client-ui-session/client' {
+  interface NewSessionIntentMap {
+    workspace: { readonly workspaceId: import('@deepseek-ai/dsh-api-workspace-controller/client').WorkspaceId }
+  }
+}
+
+/** Deployment policy for generic Workspace creation and startup navigation. */
+export interface Config {
+  /** Whether startup may connect the most recently used Workspace. */
+  autoOpenRecent?: boolean
+  /** Whether directory-backed Workspace creation controls are visible. */
+  allowDirectoryWorkspaceCreation?: boolean
+}
+
+/** Validated Workspace UI deployment policy. */
+export const Config: z<Config> = z.object({
+  autoOpenRecent: z.boolean().default(true),
+  allowDirectoryWorkspaceCreation: z.boolean().default(true),
+})
+
 /**
  * Required services (cordis fiber inject). The target slots are declared by
  * the ui-sidebar / ui-conversation applies, whose activation order relative
@@ -70,15 +91,16 @@ export const inject = [
  * framework's global hooks.
  * @param ctx - client root context.
  */
-export function apply(ctx: Context): void {
+export function apply(ctx: Context, config: Config = {}): void {
   const sessions = ctx.get('sessions') as ISessions
   const workspaces = ctx.get('workspaces') as IWorkspaces
   const uiWorkspace = new UiWorkspaceService(
-    ctx, ctx.remote.directoryPicker, workspaces, sessions)
+    ctx, ctx.remote.directoryPicker, workspaces, sessions, config.autoOpenRecent !== false)
   ctx.uiSession.registerNewSessionHandler({
     id: 'workspace',
-    handle: () => {
-      uiWorkspace.startSession()
+    handle: (intent) => {
+      if (intent?.source === 'workspace') uiWorkspace.startSession(intent.workspaceId)
+      else uiWorkspace.startSession()
       return true
     },
   })
@@ -97,19 +119,39 @@ export function apply(ctx: Context): void {
     getSnapshot: () => ctx.slots.entries(hole).length > 0,
     subscribe: listener => ctx.slots.subscribe(hole, listener),
   })
-  const browserFlowSource = flowSource('sidebar.workspaces.directoryFlow')
+  const disabledFlowSource: HostObservable<boolean> = {
+    getSnapshot: () => false,
+    subscribe: () => () => {},
+  }
+  const browserFlowSource = config.allowDirectoryWorkspaceCreation === false
+    ? disabledFlowSource
+    : flowSource('sidebar.workspaces.directoryFlow')
   const hostInfo: HostObservable<RemoteHostFacts> = {
     getSnapshot: () => ctx.remote.$host,
     subscribe: listener => ctx.on('connection/reset', listener),
   }
-  const pickerFlowSource = flowSource('conversation.hero.workspace.directoryFlow')
+  const pickerFlowSource = config.allowDirectoryWorkspaceCreation === false
+    ? disabledFlowSource
+    : flowSource('conversation.hero.workspace.directoryFlow')
   const openSession: WorkspaceBrowserInjected['open'] = (sessionId) => {
     uiWorkspace.openSession(sessionId)
   }
   const browserInjected = (): WorkspaceBrowserInjected => ({
     // Explicit group actions keep their target; unscoped New Session inherits
     // the current Session Workspace before the recent-Workspace fallback.
-    startSession: (workspaceId) => { uiWorkspace.startSession(workspaceId) },
+    startSession: (workspaceId) => {
+      // Older composed clients (and lightweight host benches) may not yet
+      // expose the central intent dispatcher. Preserve the package's local
+      // navigation behavior for those hosts while new products can own the
+      // Workspace-scoped flow through uiSession.
+      if (typeof ctx.uiSession.startNewSession === 'function') {
+        void ctx.uiSession.startNewSession(workspaceId === undefined
+          ? { source: 'sidebar-button' }
+          : { source: 'workspace', workspaceId })
+      } else {
+        uiWorkspace.startSession(workspaceId)
+      }
+    },
     open: openSession,
     searchSessions,
     searchResultLimit: sessions.searchResultLimit,

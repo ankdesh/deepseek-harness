@@ -48,6 +48,7 @@ kind: "package-library"
 | `maxInputBytes` | 必填 | 最终 JSON 封装用户提示词的 UTF-8 字节上限 |
 | `maxOutputTokens` | 必填 | 辅助生成的 token 上限 |
 | `timeoutMs` | 必填 | 运行时定时器限制内的端到端时限 |
+| `languagePolicy` | `messages` | 使用输入语言，或设为 `english` 并在需要时翻译为英文 |
 | `provider`, `model` | 可选 | 显式路由；二者同时提供或同时省略 |
 
 -----
@@ -98,7 +99,7 @@ kind: "package-library"
 
 #### 模型看到什么
 
-标题模型会收到固定系统指令，要求以输入语言返回一个简洁且无装饰的标题；该指令包含所配置的词数与 CJK 字符数目标。它唯一的用户消息包含一个 JSON 数组，其中是精确选中的用户消息及其 seq。
+标题模型会收到固定系统指令，要求返回一个简洁且无装饰的标题。`languagePolicy: messages` 使用输入语言与两种已配置长度目标；`languagePolicy: english` 在需要时要求翻译为英文，并省略 CJK 专用措辞。它唯一的用户消息包含一个 JSON 数组，其中是精确选中的用户消息及其 seq。
 
 #### Token 影响
 
