@@ -3804,9 +3804,6 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:^
         version: link:../../../vendor/cordis
-      '@deepseek-ai/schemastery':
-        specifier: workspace:^
-        version: link:../../../vendor/schemastery
       '@deepseek-ai/dsh-api-remotes':
         specifier: workspace:^
         version: link:../../api/remotes
@@ -3837,6 +3834,9 @@ importers:
       '@deepseek-ai/dsh-util-values':
         specifier: workspace:^
         version: link:../../util/values
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
@@ -4753,9 +4753,6 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:^
         version: link:../../../vendor/cordis
-      '@deepseek-ai/schemastery':
-        specifier: workspace:^
-        version: link:../../../vendor/schemastery
       '@deepseek-ai/dsh-api-remotes':
         specifier: workspace:^
         version: link:../../api/remotes
@@ -4810,6 +4807,9 @@ importers:
       '@deepseek-ai/dsh-util-workspace-path':
         specifier: workspace:^
         version: link:../../util/workspace-path
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
@@ -5454,6 +5454,28 @@ importers:
       '@deepseek-ai/dsh-tools':
         specifier: workspace:^
         version: link:../tools
+
+  packages/core/prompt-catalog:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+
+  packages/core/prompt-catalog-yaml:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-prompt-catalog':
+        specifier: workspace:^
+        version: link:../prompt-catalog
 
   packages/core/scope:
     devDependencies:
@@ -11685,6 +11707,44 @@ importers:
         specifier: workspace:^
         version: link:../webhook
 
+  packages/workflow/s-workflow:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:^
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:^
+        version: link:../../core/session
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:^
+        version: link:../../session/session-projection
+      '@deepseek-ai/dsh-util-values':
+        specifier: workspace:^
+        version: link:../../util/values
+
+  packages/workflow/s-workflow-yaml:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-s-workflow':
+        specifier: workspace:^
+        version: link:../s-workflow
+
   packages/workflow/tool-ralph:
     dependencies:
       '@deepseek-ai/schemastery':
@@ -11736,6 +11796,27 @@ importers:
       '@deepseek-ai/dsh-workflow-ptc':
         specifier: workspace:^
         version: link:../workflow-ptc
+
+  packages/workflow/tool-s-workflow:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:^
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-s-workflow':
+        specifier: workspace:^
+        version: link:../s-workflow
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:^
+        version: link:../../core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:^
+        version: link:../../core/tools
+      '@deepseek-ai/dsh-util-values':
+        specifier: workspace:^
+        version: link:../../util/values
 
   packages/workflow/tool-workflow:
     dependencies:

@@ -1793,6 +1793,21 @@ export interface Config {
 
 来源：[`packages/llm/plugin-package-inventory-deepseek/src/index.ts:32`](../packages/llm/plugin-package-inventory-deepseek/src/index.ts)
 
+<a id="deepseek-aidsh-prompt-catalog-yaml"></a>
+
+## `@deepseek-ai/dsh-prompt-catalog-yaml`
+
+需要：`promptCatalog`
+
+```ts config-catalog
+export interface Config {
+  /** Trusted bundle files or non-recursive directories loaded once at startup. */
+  roots: string[]
+}
+```
+
+来源：[`packages/core/prompt-catalog-yaml/src/index.ts:11`](../packages/core/prompt-catalog-yaml/src/index.ts)
+
 <a id="deepseek-aidsh-ptc-runtime-node"></a>
 
 ## `@deepseek-ai/dsh-ptc-runtime-node`
@@ -1917,6 +1932,22 @@ export interface Config {
 ```
 
 来源：[`packages/guard/repeat-tool-reminder/src/index.ts:28`](../packages/guard/repeat-tool-reminder/src/index.ts)
+
+<a id="deepseek-aidsh-s-workflow-yaml"></a>
+
+## `@deepseek-ai/dsh-s-workflow-yaml`
+
+需要：`sWorkflow`
+
+```ts config-catalog
+/** Trusted startup roots; files are read once and never hot-reloaded. */
+export interface Config {
+  /** Trusted catalog files or non-recursive directories loaded once at startup. */
+  roots: string[]
+}
+```
+
+来源：[`packages/workflow/s-workflow-yaml/src/index.ts:12`](../packages/workflow/s-workflow-yaml/src/index.ts)
 
 <a id="deepseek-aidsh-sandbox-local"></a>
 
@@ -3662,6 +3693,8 @@ export interface Config {
 - `@deepseek-ai/dsh-llm`（[`packages/llm/llm/src/index.ts`](../packages/llm/llm/src/index.ts)）
 - `@deepseek-ai/dsh-lsp`（[`packages/lsp/lsp/src/index.ts`](../packages/lsp/lsp/src/index.ts)）
 - `@deepseek-ai/dsh-mcp-resources` — 需要 `tools`（[`packages/mcp/mcp-resources/src/index.ts`](../packages/mcp/mcp-resources/src/index.ts)）
+- `@deepseek-ai/dsh-prompt-catalog`（[`packages/core/prompt-catalog/src/index.ts`](../packages/core/prompt-catalog/src/index.ts)）
+- `@deepseek-ai/dsh-s-workflow` — 需要 `agents` · `sessionProjections`（[`packages/workflow/s-workflow/src/index.ts`](../packages/workflow/s-workflow/src/index.ts)）
 - `@deepseek-ai/dsh-sandbox-ssh` — 需要 `ssh`（[`packages/ssh/sandbox-ssh/src/index.ts`](../packages/ssh/sandbox-ssh/src/index.ts)）
 - `@deepseek-ai/dsh-schedule` — 需要 `agents` · `sessions` · `tools` · `sessionPersistence`（[`packages/schedule/schedule/src/index.ts`](../packages/schedule/schedule/src/index.ts)）
 - `@deepseek-ai/dsh-session`（[`packages/core/session/src/index.ts`](../packages/core/session/src/index.ts)）
@@ -3678,6 +3711,7 @@ export interface Config {
 - `@deepseek-ai/dsh-tool-ask-user` — 需要 `tools` · `userInteraction`（[`packages/interaction/tool-ask-user/src/index.ts`](../packages/interaction/tool-ask-user/src/index.ts)）
 - `@deepseek-ai/dsh-tool-call-timeout-policy` — 需要 `tools`（[`packages/guard/timeout-policy/src/index.ts`](../packages/guard/timeout-policy/src/index.ts)）
 - `@deepseek-ai/dsh-tool-cordis` — 需要 `tools` · `systemPrompt` · `dynamicCordisRunner` · `cordisInspect`（[`packages/extensions/tool-cordis/src/index.ts`](../packages/extensions/tool-cordis/src/index.ts)）
+- `@deepseek-ai/dsh-tool-s-workflow` — 需要 `agents` · `sWorkflow` · `tools` · `systemPrompt`（[`packages/workflow/tool-s-workflow/src/index.ts`](../packages/workflow/tool-s-workflow/src/index.ts)）
 - `@deepseek-ai/dsh-tool-subagent-control` — 需要 `tools` · `subagents`（[`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts)）
 - `@deepseek-ai/dsh-user-questions`（[`packages/interaction/user-questions/src/index.ts`](../packages/interaction/user-questions/src/index.ts)）
 - `@deepseek-ai/dsh-webhook` — 需要 `agents` · `agentDefaultModel` · `agentPresets` · `permissionPresets` · `sessionTitle` · `workspaceRegistry`（[`packages/webhook/webhook/src/index.ts`](../packages/webhook/webhook/src/index.ts)）

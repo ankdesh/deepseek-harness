@@ -27,6 +27,8 @@ kind: "package-group"
 | [`scope/`](scope/README.zh.md) | 隔离单个 agent 贡献的作用域注册与事件路由 | 库，不使用 ctx key |
 | [`session/`](session/README.zh.md) | 每个 agent 的历史均派生自该仅追加会话事件日志 | `ctx.sessions` |
 | [`system-prompt/`](system-prompt/README.zh.md) | 由有序段、工具 schema 与变量进行的系统提示词组装 | `ctx.systemPrompt` |
+| [`prompt-catalog/`](prompt-catalog/README.zh.md) | 带精确绑定与内容摘要的封存版本化 prompt bundle | `ctx.promptCatalog` |
+| [`prompt-catalog-yaml/`](prompt-catalog-yaml/README.zh.md) | Prompt bundle 的严格启动期 YAML provider | `ctx.promptCatalogYaml` |
 | [`tools/`](tools/README.zh.md) | 供循环分发使用的工具注册表与带防护机制的执行流水线 | `ctx.tools` |
 | [`agent-tool-presentation/`](agent-tool-presentation/README.zh.md) | 为 preset 提供按 agent 的工具呈现方式选择器 | 无 ctx key |
 | [`agent/`](agent/README.zh.md) | 供插件编程使用的 `Agent` 句柄，以及其实时注册表与事件 | `ctx.agents` |

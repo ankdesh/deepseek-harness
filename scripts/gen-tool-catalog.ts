@@ -53,6 +53,8 @@ import * as ToolStrReplaceEditor from '@deepseek-ai/dsh-tool-str-replace-editor'
 import TerminalSessionService from '@deepseek-ai/dsh-terminal'
 import * as ToolPty from '@deepseek-ai/dsh-tool-terminal'
 import * as ToolGoal from '@deepseek-ai/dsh-tool-goal'
+import SWorkflowService from '@deepseek-ai/dsh-s-workflow'
+import * as ToolSWorkflow from '@deepseek-ai/dsh-tool-s-workflow'
 import * as ToolSchedule from '@deepseek-ai/dsh-schedule'
 import Lsp from '@deepseek-ai/dsh-lsp'
 import * as ToolLsp from '@deepseek-ai/dsh-tool-lsp'
@@ -423,6 +425,20 @@ const TOOL_PACKAGES: ToolPackage[] = [
     },
     note:
       'create, edit, pause, and resume require direct-human root authority; complete and blocked also accept the exact current goal round. The default blocked lower bound is three admitted rounds.',
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-s-workflow',
+    dir: 'tool-s-workflow',
+    source: 'packages/workflow/tool-s-workflow/src/index.ts',
+    requires: ['ctx.tools', 'ctx.agents', 'ctx.sWorkflow', 'ctx.systemPrompt', 'a calling Agent inside its active driver'],
+    writes: ['tool/call', 's-workflow/change for mutations', 'tool/result'],
+    async mount(ctx) {
+      await ctx.plugin(AgentRegistry)
+      await ctx.plugin(SWorkflowService)
+      await ctx.plugin(ToolSWorkflow)
+    },
+    note:
+      'The model may read state, replace a review draft, checkpoint usage, or request human input/completion review; lifecycle, budget, approval, apply, and send authority remain host-only.',
   },
   {
     pkg: '@deepseek-ai/dsh-schedule',

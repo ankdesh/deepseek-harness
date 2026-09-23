@@ -27,6 +27,8 @@ Use the core packages to build or extend an agent that records durable session h
 | [`scope/`](scope/README.md) | Scoped registration and event routing that isolate one agent's contributions | library — no ctx key |
 | [`session/`](session/README.md) | The append-only session event log every agent's history derives from | `ctx.sessions` |
 | [`system-prompt/`](system-prompt/README.md) | System-prompt assembly from ordered sections, tool schemas, and variables | `ctx.systemPrompt` |
+| [`prompt-catalog/`](prompt-catalog/README.md) | Sealed, versioned prompt bundles with exact binding and content digests | `ctx.promptCatalog` |
+| [`prompt-catalog-yaml/`](prompt-catalog-yaml/README.md) | Strict startup YAML provider for prompt bundles | `ctx.promptCatalogYaml` |
 | [`tools/`](tools/README.md) | The tool registry and guarded execution pipeline the loop dispatches through | `ctx.tools` |
 | [`agent-tool-presentation/`](agent-tool-presentation/README.md) | Per-agent tool-presentation selector for presets | no ctx key |
 | [`agent/`](agent/README.md) | The `Agent` handle plugins program against, plus its live registry and events | `ctx.agents` |

@@ -204,6 +204,10 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/web/web-fetch-http': { kind: 'indirect', reason: 'The provider backend delegates model rendering to dsh-tool-web.' },
   'packages/web/web-search-exa': { kind: 'indirect', reason: 'The provider backend delegates model rendering to dsh-tool-web.' },
   'packages/workflow/workflow': { kind: 'indirect', reason: 'The service delegates parent and child model rendering to its consumer and engine.' },
+  'packages/core/prompt-catalog': { kind: 'indirect', reason: 'The catalog delegates rendering of bound prompt sections to its consumers.' },
+  'packages/core/prompt-catalog-yaml': { kind: 'indirect', reason: 'The provider only loads prompt bundles; consumers own their model-visible rendering.' },
+  'packages/workflow/s-workflow': { kind: 'indirect', reason: 'The service stores workflow state; prompt and tool consumers own every model-visible projection.' },
+  'packages/workflow/s-workflow-yaml': { kind: 'indirect', reason: 'The provider only loads workflow definitions and adapters; consumers own every model-visible projection.' },
 }
 
 interface Failure {
