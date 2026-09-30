@@ -1,0 +1,92 @@
+{
+  "id": "analysis-review",
+  "version": "1.0.0",
+  "primary": "primary",
+  "agents": [
+    {
+      "id": "primary",
+      "prompt": "primary.md",
+      "tools": [
+        "get_event_system"
+      ],
+      "publishes": []
+    },
+    {
+      "id": "analyst",
+      "prompt": "analyst.md",
+      "tools": [
+        "publish_event",
+        "get_event_system"
+      ],
+      "publishes": [
+        "analysis.ready"
+      ]
+    },
+    {
+      "id": "reviewer",
+      "prompt": "reviewer.md",
+      "tools": [
+        "publish_event",
+        "get_event_system"
+      ],
+      "publishes": [
+        "review.ready"
+      ]
+    }
+  ],
+  "events": {
+    "user.requested": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "analysis.ready": {
+      "type": "object",
+      "properties": {
+        "findings": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "findings"
+      ],
+      "additionalProperties": false
+    },
+    "review.ready": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "subscriptions": [
+    {
+      "id": "analyze",
+      "event": "user.requested",
+      "target": "analyst"
+    },
+    {
+      "id": "review",
+      "event": "analysis.ready",
+      "target": "reviewer"
+    },
+    {
+      "id": "summarize",
+      "event": "review.ready",
+      "target": "primary"
+    }
+  ]
+}

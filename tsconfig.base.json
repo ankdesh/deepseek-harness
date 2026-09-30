@@ -28,6 +28,9 @@
     // not declaration path aliases, keep each package/vendor source compiled
     // under its own tsconfig boundary.
     "paths": {
+      "@deepseek-ai/dsh-event-system-yaml": ["./packages/workflow/event-system-yaml/src/index.ts"],
+      "@deepseek-ai/dsh-event-system": ["./packages/workflow/event-system/src/index.ts"],
+      "@deepseek-ai/dsh-event-system/types": ["./packages/workflow/event-system/src/types.ts"],
       "@deepseek-ai/dsh-browser-use": ["./packages/browser-use/browser-use/src/index.ts"],
       "@deepseek-ai/dsh-browser-use/brand": ["./packages/browser-use/browser-use/src/brand.ts"],
       "@deepseek-ai/dsh-experimental-browser-use-runtime": ["./packages/experimental/browser-use-runtime/src/index.ts"],
@@ -316,6 +319,7 @@
       "@deepseek-ai/dsh-credentials-local": ["./packages/credentials/credentials-local/src"],
       "@deepseek-ai/dsh-deepseek-llm-api-extensions": ["./packages/llm/deepseek-llm-api-extensions/src"],
       "@deepseek-ai/dsh-deque": ["./packages/util/deque/src"],
+      "@deepseek-ai/dsh-event-system/invariant": ["./packages/workflow/event-system/src/invariant.ts"],
       "@deepseek-ai/dsh-file-reference": ["./packages/context/file-reference/src"],
       "@deepseek-ai/dsh-file-reference-local": ["./packages/context/file-reference-local/src"],
       "@deepseek-ai/dsh-fs": ["./packages/fs/fs/src"],

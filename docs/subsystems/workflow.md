@@ -8,6 +8,10 @@ Service Definition: [dsh-workflow](../../packages/workflow/workflow) (`ctx.workf
 
 Sources: browser-safe vocabulary in [`packages/workflow/workflow/src/types.ts`](../../packages/workflow/workflow/src/types.ts), Host request and live-run handles in [`runtime-types.ts`](../../packages/workflow/workflow/src/runtime-types.ts).
 
+## Conversation event agents
+
+[dsh-event-system](../../packages/workflow/event-system/README.md) separately provides `ctx.eventSystems` for conversation-local native agents. `EventSystemDefinition` names a fixed primary, roster, event payload schemas, and exact subscriptions. `EventSystemSnapshot` pins that definition and its digest with members, event/delivery history, request reservations, spending, revision, and admission status (`active`, `paused`, `stopped`, `needs-resume`, `exhausted`). Events name causation within the conversation; deliveries progress from pending/dispatching to native acceptance and a completed/failed/interrupted/cancelled outcome. Retry appends a separate attempt. `ExecutionLimits` bounds admissions and aggregate model work. The [YAML provider](../../packages/workflow/event-system-yaml/README.md) resolves contained Markdown prompts; human control and model publication remain separate service consumers. These packages supply no workflow scheduler or executable graph.
+
 ## The start request
 
 What a caller asks for when starting a run. The ordinary workflow tool builds this from the model's `{ script, meta, args }` call plus the calling agent; specialized consumers may also select one engine-wide `subagentProvider` and lower `maxTotalAgents` for the run, but the script cannot observe or replace either policy. `meta` and `args` are plain JSON DATA (the engine validates `meta` against its schema and rejects loud BEFORE anything runs — no script text is ever evaluated to obtain it). `parent` is REQUIRED — every child the script starts is attributed to it, and cwd, lineage, and depth pass through the [subagent seam](subagent.md).

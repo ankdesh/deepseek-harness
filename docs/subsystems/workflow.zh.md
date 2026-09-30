@@ -8,6 +8,10 @@ Service Definition：[dsh-workflow](../../packages/workflow/workflow)（`ctx.wor
 
 源码：浏览器安全词汇位于 [`packages/workflow/workflow/src/types.ts`](../../packages/workflow/workflow/src/types.ts)，Host 请求与活跃运行句柄位于 [`runtime-types.ts`](../../packages/workflow/workflow/src/runtime-types.ts)。
 
+## 对话事件智能体
+
+[dsh-event-system](../../packages/workflow/event-system/README.zh.md) 独立提供 `ctx.eventSystems`，管理对话内原生 agent。`EventSystemDefinition` 指定固定主成员、成员表、事件载荷 schema 和精确订阅。`EventSystemSnapshot` 固定定义及摘要，保存成员、事件／投递历史、请求预留、消耗、修订号及接纳状态（`active`、`paused`、`stopped`、`needs-resume`、`exhausted`）。事件在对话内引用因果来源；投递由 pending/dispatching 进入原生接纳，再获得 completed/failed/interrupted/cancelled 结果。重试追加独立尝试。`ExecutionLimits` 约束接纳和聚合模型工作。[YAML provider](../../packages/workflow/event-system-yaml/README.zh.md) 解析目录内 Markdown 提示词；人类控制与模型发布为独立服务消费者。这些包不提供工作流调度器或可执行图。
+
 ## 启动请求
 
 本节定义调用方启动一次运行时提交的请求。普通工作流工具会根据模型的 `{ script, meta, args }` 调用和发起调用的 agent 构建该请求；专用消费方还可以为本次运行选择引擎级 `subagentProvider`，并将 `maxTotalAgents` 调低，但脚本无法观察或替换这两项策略。`meta` 与 `args` 是普通 JSON 数据；引擎会用 schema 校验 `meta`，并在任何工作开始前明确报错并拒绝无效数据。引擎绝不会通过对脚本文本求值来获取它们。`parent` 是必填字段——脚本启动的每个子 agent 都归属于它，cwd、谱系与深度通过 [subagent seam](subagent.zh.md) 传递。

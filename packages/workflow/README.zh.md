@@ -24,6 +24,8 @@ kind: "package-group"
 
 | 包 | 职责 | ctx 键 |
 |---|---|---|
+| [`event-system`](event-system/README.zh.md) | 持久对话内事件 agent 与宿主聚合预算 | `ctx.eventSystems` |
+| [`event-system-yaml`](event-system-yaml/README.zh.md) | 可信 YAML 成员／订阅与 Markdown 提示词 | `ctx.eventSystemsYaml` |
 | [`workflow`](workflow/README.zh.md) | 运行由模型编写的、扇出 subagent 的编排脚本 | `ctx.workflowEngine` |
 | [`workflow-ptc`](workflow-ptc/README.zh.md) | 通过共享的沙箱化 PTC Node 进程运行时执行工作流脚本 | 注册到 `ctx.workflowEngine` |
 | [`tool-workflow`](tool-workflow/README.zh.md) | 把 `workflow` 工具交给模型，用于脚本化多 agent 编排 | 注册到 `ctx.tools` |

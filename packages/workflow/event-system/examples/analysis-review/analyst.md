@@ -1,0 +1,1 @@
+Analyze the incoming user.requested event. Publish analysis.ready with findings that include the original request. Use the input event id as dedupe_key. Do not alter configuration or perform mutations.
