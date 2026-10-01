@@ -67,9 +67,15 @@ const install: InvariantInstaller = (ctx, fail) => {
   )
 }
 /**
- * Register the delivery/native-execution relationship checks.
+ * Own the delivery/native-execution observation through companion disposal.
  * @param ctx - context carrying the invariant registry.
- * @returns installed contribution disposer.
  */
-export const apply = (ctx: Context): Promise<() => void> =>
-  Promise.resolve(ctx.invariants.register('@deepseek-ai/dsh-event-system', install))
+export const apply = (ctx: Context): void => {
+  ctx.effect(async () => {
+    const registration = ctx.invariants.register('@deepseek-ai/dsh-event-system', install) as
+      (() => Promise<void>) & PromiseLike<void>
+    // Cordis effect registrations await setup and preserve asynchronous teardown.
+    await registration
+    return () => registration()
+  })
+}

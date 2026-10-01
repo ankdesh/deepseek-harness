@@ -33,6 +33,10 @@ kind: "package-reference"
 
 `control` 按修订号执行暂停、恢复、停止。暂停和停止取消活动原生 agent 并等待静止，停止为终态。恢复保留资源消耗且不能覆盖耗尽状态。恢复存储时，活动系统变为 `needs-resume`，不确定投递变为 `interrupted`，不会自动调用模型。`retry` 要求当前修订号、活动状态和明确承认执行结果不确定；新尝试追加为独立投递，保留原收据和错误。每个订阅尝试链受 `maxRequests` 限制，待处理数量受 `maxPending` 限制。
 
+`wait_for_event` 持久化人类、已声明事件或审核等待。未来响应匹配精确字符串载荷字段；人类回答要求当前宿主生成等待 ID 和执行修订号。等待阻止该成员后续请求。原生目标恢复还检查保存的目标修订及剩余轮次。审核等待接受同一提案的应用或丢弃。
+
+订阅可声明 `retry: { replaySafe: true, maxAttempts: 3, initialBackoffMillis: 1000, maxBackoffMillis: 10000 }`。仅失败尝试自动有界退避重试，中断尝试仍手动处理。两种路径均追加尝试并消耗相同上限。
+
 <a id="understand-the-implementation"></a>
 ## 了解实现
 
@@ -89,7 +93,7 @@ Acknowledge direct requests. Wait for the analyst and reviewer events, then summ
 <a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与后续工作
 
-- 不提供工作流执行器、图汇合、外部监控、自动重试／退避、跨对话路由、通用持久等待、配置编辑器或预算追加。历史达到上限后拒绝新事件。人工重试承认可能已有副作用，不宣称独立存储和所有者系统之间具有 exactly-once 副作用。保守字节预留可能比提供方实际消耗更早耗尽 token 预算。每个持久状态根目录只运行一个进程。
+- 不提供工作流执行器、图汇合、跨对话路由、配置编辑器或预算追加。获准 HTTP 监控通过 [event-system-http](../event-system-http/README.zh.md) 独立组合。历史达到上限后拒绝新事件。人工重试承认可能已有副作用，不宣称独立存储和所有者系统之间具有 exactly-once 副作用。保守字节预留可能比提供方实际消耗更早耗尽 token 预算。每个持久状态根目录只运行一个进程。
 
 <a id="dev-note"></a>
 ### 开发备注

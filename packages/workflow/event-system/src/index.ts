@@ -11,8 +11,10 @@ import type { Domain } from '@deepseek-ai/dsh-storage-domain'
 import type {} from '@deepseek-ai/dsh-token-meter'
 import type {} from '@deepseek-ai/dsh-session-persistence'
 import type {} from '@deepseek-ai/dsh-system-prompt'
+import type {} from '@deepseek-ai/dsh-goal'
+import type { GoalId } from '@deepseek-ai/dsh-goal/types'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
-import { snapshotSchema } from './schema.ts'
+import { snapshotSchema, waitSchema } from './schema.ts'
 import { EventSystemLedger, validateDefinition } from './ledger.ts'
 import { installEventTools } from './tools.ts'
 import type {
@@ -25,6 +27,9 @@ import type {
   EventId,
   DeliveryId,
   ActivationId,
+  WaitId,
+  WaitRequest,
+  EventWait,
 } from './types.ts'
 export type * from './types.ts'
 export { validateDefinition } from './ledger.ts'
@@ -65,6 +70,7 @@ export default class EventSystemService extends Service {
   private handles = new Map<SessionId, AgentHandle>()
   private pumps = new Map<SessionId, Promise<void>>()
   private jobs = new Set<Promise<unknown>>()
+  private retryTimers = new Map<SessionId, ReturnType<typeof setTimeout>>()
   private timeLimits = new Map<SessionId, ReturnType<typeof setTimeout>>()
 
   constructor(ctx: Context) {
@@ -82,7 +88,12 @@ export default class EventSystemService extends Service {
         if (!membership) return next()
         // oxlint-disable-next-line typescript/no-non-null-assertion -- Owned references exist in the validated immutable ledger.
         const snapshot = this.get(membership.conversationId)!
-        if (this.isStopping() || snapshot.status !== 'active') return { kind: 'reject' }
+        if (
+          this.isStopping() ||
+          snapshot.status !== 'active' ||
+          snapshot.waits?.some(wait => wait.member === membership.member && wait.state === 'waiting')
+        )
+          return { kind: 'reject' }
         const decision = await next()
         if (decision.kind !== 'enter') return decision
         if (!(await this.ledger.admitRound(snapshot.conversationId, `${agent.id}:${turn}`))) return { kind: 'reject' }
@@ -297,11 +308,13 @@ export default class EventSystemService extends Service {
    * Admit a trusted application/user event after payload validation and before scheduling.
    * @param id - primary conversation identity.
    * @param input - trusted validated publication request.
+   * @param revision - optional exact human-observed revision.
    * @returns durably committed event identity.
    */
-  async publishHost(id: SessionId, input: PublishEventInput): Promise<EventId> {
+  async publishHost(id: SessionId, input: PublishEventInput, revision?: number): Promise<EventId> {
     await this.ready
-    const eventId = await this.ledger.publish(id, input, true)
+    const eventId = await this.ledger.publish(id, input, true, false, revision)
+    this.resumeResolvedGoals(id)
     this.schedule(id)
     return eventId
   }
@@ -337,6 +350,13 @@ export default class EventSystemService extends Service {
         ...current,
         status: action === 'resume' ? 'active' : action === 'pause' ? 'paused' : 'stopped',
         reason: '',
+        ...(current.waits
+          ? {
+            waits: current.waits.map(wait =>
+              action === 'stop' && wait.state === 'waiting' ? { ...wait, state: 'cancelled' as const } : wait,
+            ),
+          }
+          : {}),
         deliveries: current.deliveries.map(delivery =>
           action === 'stop' && ['pending', 'dispatching', 'accepted'].includes(delivery.state)
             ? { ...delivery, state: 'cancelled' as const }
@@ -344,8 +364,11 @@ export default class EventSystemService extends Service {
         ),
       }
     })
-    if (action === 'resume') this.schedule(id)
-    else {
+    if (action === 'resume') {
+      this.resumeResolvedGoals(id)
+      await this.queueSafeRetries(id)
+      this.schedule(id)
+    } else {
       const agents = snapshot.members
         .map(member => this.ctx.agents.get(member.sessionId))
         .filter((agent): agent is Agent => agent !== undefined)
@@ -400,12 +423,175 @@ export default class EventSystemService extends Service {
             activationId: randomUUID() as ActivationId,
             turn: null,
             error: '',
+            ...(current.definition.subscriptions.find(subscription => subscription.id === selected.subscription)
+              ?.retry
+              ? {
+                notBefore:
+                    Date.now() +
+                    Math.min(
+                      current.definition.subscriptions.find(subscription => subscription.id === selected.subscription)
+                        ?.retry?.maxBackoffMillis ?? 0,
+                      (current.definition.subscriptions.find(
+                        subscription => subscription.id === selected.subscription,
+                      )?.retry?.initialBackoffMillis ?? 0) *
+                        2 ** (selected.attempt - 1),
+                    ),
+              }
+              : {}),
           },
         ],
       }
     })
     this.schedule(id)
     return snapshot
+  }
+
+  /**
+   * List persisted conversations for trusted source adapters.
+   * @returns all pinned conversation snapshots.
+   */
+  list(): EventSystemSnapshot[] {
+    return this._ledger?.list() ?? []
+  }
+
+  /**
+   * Publish a source observation only while the owning conversation has active authority.
+   * @param id - owning conversation.
+   * @param input - validated source outbox item.
+   * @returns durable event identity for idempotent source acknowledgement.
+   */
+  async publishTrigger(id: SessionId, input: PublishEventInput): Promise<EventId> {
+    await this.ready
+    const result = await this.ledger.publish(id, input, true, true)
+    this.resumeResolvedGoals(id)
+    this.schedule(id)
+    return result
+  }
+
+  /**
+   * Persist a future correlated wait and disarm native goal continuation without spending rounds.
+   * @param agent - exact live member executing the waiting tool.
+   * @param request - declared event or host-human response request.
+   * @returns committed wait with its host-generated response identity.
+   */
+  async wait(agent: Agent, request: WaitRequest): Promise<EventWait> {
+    const member = this.membership(agent.id)
+    if (
+      !member ||
+      this.ctx.agents.get(agent.id) !== agent ||
+      this.ctx.agents.currentInitiator() !== agent ||
+      agent.status !== 'running'
+    )
+      throw new Error('Waiting requires the live calling member')
+    const state = this.get(member.conversationId)
+    if (!state || state.status !== 'active') throw new Error('Execution is not active')
+    const id = randomUUID() as WaitId
+    const human = request.kind === 'human'
+    const eventType = human ? 'system.wait.answered' : request.eventType
+    if (
+      !eventType ||
+      (!human && !(eventType in state.definition.events)) ||
+      !request.reason.trim() ||
+      (!human && (!request.matchKey || request.matchValue === undefined))
+    )
+      throw new Error('Wait requires a declared event and exact response correlation')
+    if (state.waits?.some(wait => wait.member === member.member && wait.state === 'waiting'))
+      throw new Error('Member is already waiting')
+    if ((state.waits?.length ?? 0) >= state.limits.maxEvents || Buffer.byteLength(JSON.stringify(request)) > state.limits.maxPayloadBytes)
+      throw new Error('Wait admission limit exceeded')
+    const active = state.deliveries.find(
+      delivery => delivery.target === member.member && delivery.state === 'accepted',
+    )
+    const goals = this.ctx.get('goals')
+    const currentGoal = state.mode === 'goal' && member.primary ? goals?.get(agent) : undefined
+    const wait = waitSchema.parse({
+      id, member: member.member, kind: request.kind, reason: request.reason, eventType,
+      matchKey: human ? 'wait_id' : request.matchKey, matchValue: human ? id : request.matchValue,
+      state: 'waiting', afterEvents: state.events.length, causation: active?.eventId ?? null, response: null,
+      ...(currentGoal?.phase === 'active' ? { goal: { id: currentGoal.id, revision: currentGoal.revision + 1 } } : {}),
+    })
+    if (Buffer.byteLength(JSON.stringify(wait)) > state.limits.maxPayloadBytes)
+      throw new Error('Complete wait exceeds byte limit')
+    // Validate the full record before disarming the native goal.
+    if (currentGoal?.phase === 'active') goals?.block(agent, currentGoal, { code: 'event-wait', message: request.reason })
+    await this.ledger.update(state.conversationId, (current) => {
+      if (current.status !== 'active' || (current.waits?.length ?? 0) >= current.limits.maxEvents || current.waits?.some(item => item.member === member.member && item.state === 'waiting'))
+        throw new Error('Wait admission limit exceeded')
+      return { ...current, waits: [...(current.waits ?? []), { ...wait, afterEvents: current.events.length }] }
+    })
+    return wait
+  }
+
+  /**
+   * Answer one exact human wait; stale answers cannot wake another activation.
+   * @param id - owning conversation.
+   * @param revision - observed execution revision.
+   * @param waitId - current human response identity.
+   * @param answer - bounded human answer logged through the native inbox.
+   * @returns durable response event identity.
+   */
+  async answerWait(id: SessionId, revision: number, waitId: WaitId, answer: string): Promise<EventId> {
+    const state = this.get(id)
+    const wait = state?.waits?.find(item => item.id === waitId)
+    if (
+      !state ||
+      state.revision !== revision ||
+      state.status !== 'active' ||
+      !wait ||
+      wait.state !== 'waiting' ||
+      wait.kind !== 'human' ||
+      !answer.trim()
+    )
+      throw new Error('Answer requires the current active human wait')
+    return this.publishHost(
+      id,
+      {
+        type: 'system.wait.answered',
+        payload: { wait_id: waitId, answer },
+        producer: 'human',
+        dedupeKey: waitId,
+        ...(wait.causation ? { causation: wait.causation } : {}),
+      },
+      revision,
+    )
+  }
+
+  private resumeResolvedGoals(id: SessionId): void {
+    const state = this.get(id)
+    if (state?.status !== 'active' || state.mode !== 'goal') return
+    const goals = this.ctx.get('goals')
+    const agent = this.ctx.agents.get(id)
+    if (!goals || !agent) return
+    for (const wait of state.waits ?? []) {
+      if (wait.state !== 'resolved' || !wait.goal) continue
+      const goal = goals.get(agent)
+      if (
+        goal?.id === wait.goal.id &&
+        goal.revision === wait.goal.revision &&
+        goal.phase === 'blocked' &&
+        goal.roundsStarted < goal.maxGoalRounds &&
+        goal.blockedReason?.code === 'event-wait'
+      )
+        goals.resume(agent, { id: wait.goal.id as GoalId, revision: wait.goal.revision })
+    }
+  }
+
+  private async queueSafeRetries(id: SessionId): Promise<void> {
+    const state = this.get(id)
+    if (state?.status !== 'active') return
+    for (const delivery of state.deliveries) {
+      const policy = state.definition.subscriptions.find(
+        subscription => subscription.id === delivery.subscription,
+      )?.retry
+      if (
+        !policy ||
+        delivery.state !== 'failed' ||
+        delivery.attempt >= Math.min(policy.maxAttempts, state.limits.maxRequests) ||
+        state.deliveries.some(item => item.retryOf === delivery.id)
+      )
+        continue
+      await this.retry(id, this.get(id)?.revision ?? 0, delivery.id, true)
+    }
   }
 
   private track<T>(job: Promise<T>): void {
@@ -439,6 +625,8 @@ export default class EventSystemService extends Service {
           state.deliveries.some(
             item =>
               item.state === 'pending' &&
+              (item.notBefore ?? 0) <= Date.now() &&
+              !state.waits?.some(wait => wait.member === item.target && wait.state === 'waiting') &&
               !state.deliveries.some(
                 active => active.target === item.target && ['accepted', 'dispatching'].includes(active.state),
               ) &&
@@ -458,6 +646,7 @@ export default class EventSystemService extends Service {
       // oxlint-disable-next-line typescript/no-non-null-assertion -- Owned references exist in the validated immutable ledger.
       const snapshot = this.get(id)!
       if (snapshot.status !== 'active') return
+      this.armRetryTimer(snapshot)
       const active = snapshot.deliveries.filter(delivery => ['dispatching', 'accepted'].includes(delivery.state))
       const busy = new Set(
         snapshot.members
@@ -469,6 +658,8 @@ export default class EventSystemService extends Service {
       const delivery = snapshot.deliveries.find(
         delivery =>
           delivery.state === 'pending' &&
+          (delivery.notBefore ?? 0) <= Date.now() &&
+          !snapshot.waits?.some(wait => wait.member === delivery.target && wait.state === 'waiting') &&
           !active.some(item => item.target === delivery.target) &&
           // oxlint-disable-next-line typescript/no-non-null-assertion -- Owned references exist in the validated immutable ledger.
           this.ctx.agents.get(snapshot.members.find(member => member.id === delivery.target)!.sessionId)?.status !==
@@ -524,6 +715,7 @@ export default class EventSystemService extends Service {
         }
         // oxlint-disable-next-line typescript/no-non-null-assertion -- Owned references exist in the validated immutable ledger.
         const event = snapshot.events.find(event => event.id === delivery.eventId)!
+        this.resumeResolvedGoals(id)
         const input = createUserMessage({
           content: [
             {
@@ -548,6 +740,7 @@ export default class EventSystemService extends Service {
               : item,
           ),
         }))
+        await this.queueSafeRetries(id)
       }
     }
   }
@@ -595,8 +788,29 @@ export default class EventSystemService extends Service {
           dedupeKey: active.activationId,
           causation: active.eventId,
         })
+      await this.queueSafeRetries(id)
       this.schedule(id)
     }
+  }
+
+  private armRetryTimer(state: EventSystemSnapshot): void {
+    const old = this.retryTimers.get(state.conversationId)
+    if (old) clearTimeout(old)
+    this.retryTimers.delete(state.conversationId)
+    const future = state.deliveries
+      .filter(delivery => delivery.state === 'pending' && (delivery.notBefore ?? 0) > Date.now())
+      .map(delivery => delivery.notBefore ?? 0)
+    if (!future.length || this.stopping || state.status !== 'active') return
+    this.retryTimers.set(
+      state.conversationId,
+      setTimeout(
+        () => {
+          this.retryTimers.delete(state.conversationId)
+          this.schedule(state.conversationId)
+        },
+        Math.max(1, Math.min(...future) - Date.now()),
+      ),
+    )
   }
 
   private async *meter(options: GenerateOptions, next: () => AsyncIterable<StreamChunk>): AsyncIterable<StreamChunk> {
@@ -609,6 +823,8 @@ export default class EventSystemService extends Service {
     }
     // oxlint-disable-next-line typescript/no-non-null-assertion -- Owned references exist in the validated immutable ledger.
     const snapshot = this.get(membership.conversationId)!
+    if (snapshot.waits?.some(wait => wait.member === membership.member && wait.state === 'waiting'))
+      throw new Error('Member is waiting for its correlated response')
     if (options.maxTokens === undefined || options.maxTokens > snapshot.limits.maxOutputTokens)
       throw new Error('Governed model requests require an explicit bounded output token limit')
     const tokens =
@@ -678,10 +894,17 @@ export default class EventSystemService extends Service {
       if (this.domain) await this.domain.close()
       return
     }
+    for (const timer of this.retryTimers.values()) clearTimeout(timer)
+    this.retryTimers.clear()
     for (const timer of this.timeLimits.values()) clearTimeout(timer)
     this.timeLimits.clear()
-    for (const snapshot of this.ledger.list())
+    const goals = this.ctx.get('goals')
+    for (const snapshot of this.ledger.list()) {
+      const primary = this.ctx.agents.get(snapshot.conversationId)
+      const goal = snapshot.mode === 'goal' && primary ? goals?.get(primary) : undefined
+      if (primary && goal?.phase === 'active') goals?.pause(primary, goal)
       for (const member of snapshot.members) this.ctx.agents.get(member.sessionId)?.cancel({ kind: 'parent' })
+    }
     const active = this.ledger
       .list()
       .flatMap(snapshot => snapshot.members.map(member => this.ctx.agents.get(member.sessionId)))

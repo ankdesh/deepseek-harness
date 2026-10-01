@@ -30,6 +30,13 @@ const activationPayloadSchema: JsonSchemaNode = {
   additionalProperties: false,
 }
 
+const humanAnswerSchema: JsonSchemaNode = {
+  type: 'object',
+  properties: { wait_id: { type: 'string' }, answer: { type: 'string' } },
+  required: ['wait_id', 'answer'],
+  additionalProperties: false,
+}
+
 /**
  * Reject unresolvable references and unsupported payload schemas before pinning.
  * @param input - untrusted file or persisted definition.
@@ -57,6 +64,12 @@ export function validateDefinition(input: unknown): EventSystemDefinition {
     ) {
       throw new Error(`Invalid subscription ${subscription.id}`)
     }
+    if (
+      subscription.retry &&
+      (subscription.retry.maxBackoffMillis < subscription.retry.initialBackoffMillis ||
+        subscription.retry.maxAttempts > 10)
+    )
+      throw new Error('Retry backoff or attempt limit is invalid')
     subscriptions.add(subscription.id)
   }
   return snapshotJsonValue(definition) as unknown as EventSystemDefinition
@@ -151,9 +164,17 @@ export class EventSystemLedger {
    * @param host - whether the caller owns trusted host publication authority.
    * @returns durable event identity, including exact duplicates.
    */
-  async publish(id: SessionId, input: PublishEventInput, host = false): Promise<EventId> {
+  async publish(
+    id: SessionId,
+    input: PublishEventInput,
+    host = false,
+    activeOnly = false,
+    revision?: number,
+  ): Promise<EventId> {
     let result: EventId | undefined
     await this.update(id, (snapshot) => {
+      if (revision !== undefined && snapshot.revision !== revision)
+        throw new Error('Execution state changed; reload before acting')
       const duplicate = snapshot.events.find(
         event => event.producer === input.producer && event.dedupeKey === input.dedupeKey,
       )
@@ -167,11 +188,15 @@ export class EventSystemLedger {
         result = duplicate.id
         return snapshot
       }
-      if (snapshot.status === 'stopped' || (!host && snapshot.status !== 'active'))
+      if (snapshot.status === 'stopped' || ((!host || activeOnly) && snapshot.status !== 'active'))
         throw new Error(`Cannot publish while ${snapshot.status}`)
       const schema =
         snapshot.definition.events[input.type] ??
-        (activationEventTypes.includes(input.type) ? activationPayloadSchema : undefined)
+        (input.type === 'system.wait.answered'
+          ? humanAnswerSchema
+          : activationEventTypes.includes(input.type)
+            ? activationPayloadSchema
+            : undefined)
       if ((!host && input.type.startsWith('system.')) || schema === undefined)
         throw new Error('Unknown or reserved event type')
       const violations = validateJsonSchemaValue(schema, input.payload, 'payload')
@@ -193,6 +218,17 @@ export class EventSystemLedger {
       }
       if (Buffer.byteLength(JSON.stringify(event)) > snapshot.limits.maxPayloadBytes)
         throw new Error('Complete event exceeds byte limit')
+      const resolved = (snapshot.waits ?? []).filter(
+        wait =>
+          wait.state === 'waiting' &&
+          snapshot.events.length >= wait.afterEvents &&
+          (wait.eventType === event.type ||
+            (wait.kind === 'review' && wait.eventType === 'review.applied' && event.type === 'review.discarded')) &&
+          input.payload !== null &&
+          typeof input.payload === 'object' &&
+          !Array.isArray(input.payload) &&
+          input.payload[wait.matchKey] === wait.matchValue,
+      )
       const deliveries = snapshot.definition.subscriptions
         .filter(subscription => subscription.event === event.type)
         .map(subscription => ({
@@ -208,6 +244,22 @@ export class EventSystemLedger {
           turn: null,
           error: '',
         }))
+      for (const wait of resolved) {
+        if (deliveries.some(delivery => delivery.target === wait.member)) continue
+        deliveries.push({
+          id: randomUUID() as DeliveryId,
+          eventId: event.id,
+          subscription: `wait:${wait.id}`,
+          target: wait.member,
+          messageId: randomUUID() as MessageId,
+          activationId: randomUUID() as ActivationId,
+          attempt: 1,
+          retryOf: null,
+          state: 'pending',
+          turn: null,
+          error: '',
+        })
+      }
       if (
         event.depth > snapshot.limits.maxDepth ||
         snapshot.events.length >= snapshot.limits.maxEvents ||
@@ -218,7 +270,18 @@ export class EventSystemLedger {
         throw new Error('Event chain, history, or pending delivery limit exceeded')
       }
       result = event.id
-      return { ...snapshot, events: [...snapshot.events, event], deliveries: [...snapshot.deliveries, ...deliveries] }
+      return {
+        ...snapshot,
+        events: [...snapshot.events, event],
+        deliveries: [...snapshot.deliveries, ...deliveries],
+        ...(snapshot.waits
+          ? {
+            waits: snapshot.waits.map(wait =>
+              resolved.includes(wait) ? { ...wait, state: 'resolved' as const, response: event.id } : wait,
+            ),
+          }
+          : {}),
+      }
     })
     // oxlint-disable-next-line typescript/no-non-null-assertion -- Owned references exist in the validated immutable ledger.
     return result!
@@ -376,17 +439,54 @@ export function assertSnapshotIntegrity(snapshot: EventSystemSnapshot): void {
       throw new Error('Invalid persisted causation')
     const schema =
       snapshot.definition.events[event.type] ??
-      (activationEventTypes.includes(event.type) ? activationPayloadSchema : undefined)
+      (event.type === 'system.wait.answered'
+        ? humanAnswerSchema
+        : activationEventTypes.includes(event.type)
+          ? activationPayloadSchema
+          : undefined)
     if (!schema || validateJsonSchemaValue(schema, event.payload, 'payload').length)
       throw new Error('Invalid persisted event payload')
     const cause = event.causation === null ? undefined : snapshot.events.find(item => item.id === event.causation)
     if (event.correlation !== (cause?.correlation ?? event.id)) throw new Error('Invalid persisted correlation')
     seen.set(event.id, event.depth)
   }
+  if (snapshot.waits) {
+    if (
+      snapshot.waits.length > snapshot.limits.maxEvents ||
+      !unique(snapshot.waits.map(wait => wait.id)) ||
+      !unique(snapshot.waits.filter(wait => wait.state === 'waiting').map(wait => wait.member))
+    ) throw new Error('Invalid wait identities or capacity')
+    for (const wait of snapshot.waits) {
+      const response = snapshot.events.find(event => event.id === wait.response)
+      if (
+        Buffer.byteLength(JSON.stringify(wait)) > snapshot.limits.maxPayloadBytes ||
+        (wait.kind === 'human' ? wait.eventType !== 'system.wait.answered' || wait.matchKey !== 'wait_id' || wait.matchValue !== wait.id : !(wait.eventType in snapshot.definition.events)) ||
+        (wait.goal && (snapshot.mode !== 'goal' || wait.member !== snapshot.definition.primary)) ||
+        (response && (snapshot.events.indexOf(response) < wait.afterEvents ||
+          (response.type !== wait.eventType && !(wait.kind === 'review' && wait.eventType === 'review.applied' && response.type === 'review.discarded')) ||
+          response.payload === null || typeof response.payload !== 'object' || Array.isArray(response.payload) || response.payload[wait.matchKey] !== wait.matchValue)) ||
+        !snapshot.members.some(member => member.id === wait.member) ||
+        wait.afterEvents > snapshot.events.length ||
+        (wait.causation && !snapshot.events.some(event => event.id === wait.causation)) ||
+        (wait.response && !snapshot.events.some(event => event.id === wait.response)) ||
+        (wait.state === 'resolved') !== (wait.response !== null)
+      )
+        throw new Error('Invalid persisted wait reference')
+    }
+  }
   for (const delivery of snapshot.deliveries) {
     const subscription = snapshot.definition.subscriptions.find(item => item.id === delivery.subscription)
     const event = snapshot.events.find(item => item.id === delivery.eventId)
-    if (!subscription || !event || subscription.target !== delivery.target || subscription.event !== event.type)
+    const wait = snapshot.waits?.find(
+      item =>
+        `wait:${item.id}` === delivery.subscription &&
+        item.member === delivery.target &&
+        item.response === delivery.eventId,
+    )
+    if (
+      !event ||
+      (!wait && (!subscription || subscription.target !== delivery.target || subscription.event !== event.type))
+    )
       throw new Error('Invalid persisted delivery reference')
     if (
       delivery.retryOf !== null &&

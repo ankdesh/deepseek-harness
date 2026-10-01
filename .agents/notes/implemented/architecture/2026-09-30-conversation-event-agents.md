@@ -29,3 +29,5 @@ Real Loader composition executes the generic example and native goal continuatio
 ## Consequences
 
 Independent native logs, the delivery ledger, and owner storage cannot guarantee exactly-once mutation. Conservative token reservations may reject expensive contexts early. Event history is finite. External triggers, automated retry, general durable waiting, configuration editing, and workflows remain outside this phase.
+
+The [HTTP/waiting recovery decision](2026-10-01-event-http-waiting-recovery.md) adds the separately bounded Phase 2 capabilities; the original identity, accounting, and uncertain-effect rules remain in force.

@@ -30,6 +30,10 @@ The [analysis/review template](examples/analysis-review/system.yml) and adjacent
 
 `control` performs revision-checked pause/resume/stop. Pause and stop cancel active native agents and await quiescence. Stop is terminal. Resume preserves resource usage and cannot override exhaustion. Recovery marks active systems `needs-resume` and uncertain dispatches `interrupted`; it never invokes a model automatically. `retry` requires the observed revision, active state, and explicit uncertainty acknowledgement. It appends a new delivery attempt while retaining the prior receipt and error. Each subscription's attempt chain is bounded by `maxRequests`; pending work remains bounded by `maxPending`.
 
+`wait_for_event` persists a human, declared event, or review wait. Future responses match an exact string payload field; human answers require the current host-generated wait ID and execution revision. Waiting blocks further requests for that member. Native goal resumption also checks its saved goal revision and remaining rounds. A review wait accepts apply or discard for that same proposal.
+
+A subscription may declare `retry: { replaySafe: true, maxAttempts: 3, initialBackoffMillis: 1000, maxBackoffMillis: 10000 }`. Only failed attempts use automatic bounded backoff; interrupted attempts remain manual. Both paths append attempts and charge the same limits.
+
 ## Understand the implementation
 
 The storage domain `event_systems`, version 1, owns one pinned snapshot per primary Session ID. Event and delivery IDs, native message IDs, activation IDs, and request reservations are separate identities. Each event and its complete subscription fan-out commit in one serialized table update. Acceptance follows the exact native `user/message` receipt; completion follows that agent's matching `turn/end`. A receipt is not successful completion. Restart validates the definition digest, membership, delivery references, and acyclic in-conversation causation before allowing human Resume.
@@ -82,7 +86,7 @@ Event-specific input changes the suffix while leaving pinned instructions unchan
 
 ## Known Limitations and Deferred Work
 
-- No workflow executor, graph joins, external monitors, automatic retry/backoff, cross-conversation routing, general durable waiting, configuration editor, or budget top-up is supplied. Event history is bounded and fails admission at its configured limit. Human retry acknowledges possible prior effects; exactly-once side effects across independent storage and owner systems are not claimed. Conservative byte reservations can exhaust a token allowance before a provider would. Use one process per persisted state root.
+- No workflow executor, graph joins, cross-conversation routing, configuration editor, or budget top-up is supplied. Approved HTTP monitoring is separately composed with [event-system-http](../event-system-http/README.md). Event history is bounded and fails admission at its configured limit. Human retry acknowledges possible prior effects; exactly-once side effects across independent storage and owner systems are not claimed. Conservative byte reservations can exhaust a token allowance before a provider would. Use one process per persisted state root.
 
 ### Dev Note
 

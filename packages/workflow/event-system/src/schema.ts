@@ -4,7 +4,7 @@ import type { ZodType } from 'zod'
 import type { MessageId } from '@deepseek-ai/dsh-llm'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
-import type { EventId, DeliveryId, RequestId, ActivationId, EventSystemDefinition } from './types.ts'
+import type { EventId, DeliveryId, RequestId, ActivationId, EventSystemDefinition, WaitId } from './types.ts'
 
 const positive = z.number().int().positive()
 const count = z.number().int().nonnegative()
@@ -39,6 +39,30 @@ export const limitsSchema = z.strictObject({
   maxDepth: positive,
   maxOutputTokens: positive,
 })
+const retrySchema = z.strictObject({
+  replaySafe: z.literal(true),
+  maxAttempts: positive,
+  initialBackoffMillis: positive,
+  maxBackoffMillis: positive,
+})
+/** Durable waits retain exact response matching and optional native goal revisions. */
+export const waitSchema = z.strictObject({
+  id: z
+    .string()
+    .min(1)
+    .transform(value => value as WaitId),
+  member: z.string().min(1),
+  kind: z.enum(['human', 'event', 'review']),
+  reason: z.string().min(1),
+  eventType: z.string().min(1),
+  matchKey: z.string().min(1),
+  matchValue: z.string(),
+  state: z.enum(['waiting', 'resolved', 'cancelled']),
+  afterEvents: count,
+  causation: eventId.nullable(),
+  response: eventId.nullable(),
+  goal: z.strictObject({ id: z.string().min(1), revision: positive }).optional(),
+})
 /** Resolved prompt text and subscriptions are stored with the conversation. */
 export const definitionSchema: ZodType<EventSystemDefinition> = z.strictObject({
   id: z.string().min(1),
@@ -58,7 +82,14 @@ export const definitionSchema: ZodType<EventSystemDefinition> = z.strictObject({
     )
     .min(1),
   events: z.record(z.string().min(1), json) as ZodType<EventSystemDefinition['events']>,
-  subscriptions: z.array(z.strictObject({ id: z.string().min(1), event: z.string().min(1), target: z.string().min(1) })),
+  subscriptions: z.array(
+    z.strictObject({
+      id: z.string().min(1),
+      event: z.string().min(1),
+      target: z.string().min(1),
+      retry: retrySchema.optional(),
+    }),
+  ),
 })
 /** Each event and all of its resolved deliveries commit in one record update. */
 export const snapshotSchema = z.strictObject({
@@ -66,6 +97,7 @@ export const snapshotSchema = z.strictObject({
   revision: positive,
   mode: z.enum(['goal', 'orchestrated']),
   status: z.enum(['active', 'paused', 'stopped', 'needs-resume', 'exhausted']),
+  waits: z.array(waitSchema).optional(),
   reason: z.string(),
   definition: definitionSchema,
   digest: z.string().min(1),
@@ -100,13 +132,20 @@ export const snapshotSchema = z.strictObject({
       eventId,
       subscription: z.string().min(1),
       target: z.string().min(1),
-      messageId: z.string().min(1).transform(value => value as MessageId),
-      activationId: z.string().min(1).transform(value => value as ActivationId),
+      messageId: z
+        .string()
+        .min(1)
+        .transform(value => value as MessageId),
+      activationId: z
+        .string()
+        .min(1)
+        .transform(value => value as ActivationId),
       attempt: positive,
       retryOf: deliveryId.nullable(),
       state: z.enum(['pending', 'dispatching', 'accepted', 'completed', 'failed', 'interrupted', 'cancelled']),
       turn: count.nullable(),
       error: z.string(),
+      notBefore: count.optional(),
     }),
   ),
 })

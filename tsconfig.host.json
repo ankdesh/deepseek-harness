@@ -144,6 +144,7 @@
     "scripts/client-bundle-purity.spec.ts"
   ],
   "references": [
+    { "path": "./packages/workflow/event-system-http" },
     { "path": "./packages/workflow/event-system-yaml" },
     { "path": "./packages/workflow/event-system" },
     { "path": "./packages/browser-use/browser-use" },
