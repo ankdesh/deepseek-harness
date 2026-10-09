@@ -1,0 +1,27 @@
+order_id,customer_id,customer_age,order_date,product_category,order_status,amount,discount_percent
+1001,CUST-101,34,2024-01-15,Electronics,Delivered,"$1,250.00",10
+1002,CUST-102,,01/16/2024,clothing,delivered,"$45.50",0
+1003,CUST-103,45,17-Jan-2024,  Electronics ,DLVD,"$890.00",15
+1004,CUST-104,28,2024/01/18,Home & Kitchen,Pending,"$120.00",
+1004,CUST-104,28,2024/01/18,Home & Kitchen,Pending,"$120.00",
+1005,CUST-105,52,2024-01-20,Electronics,Delivered,"$2,100.00",20
+1006,CUST-106,,01/22/2024,Clothing,Cancelled,"$75.25",5
+1007,CUST-107,31,23-Jan-2024,Home & Kitchen,delivered,"$310.00",0
+1008,CUST-108,22,2024-01-25,Electronics,DLVD,"$450.00",
+1009,CUST-109,60,2024/01/27,Clothing,Delivered,"$199.99",10
+1010,CUST-110,,28-Jan-2024,Home & Kitchen,pending,"$85.00",0
+1011,CUST-101,34,2024-02-01,Electronics,Delivered,"$350.00",5
+1012,CUST-111,29,02/03/2024,Clothing,delivered,"$65.00",
+1013,CUST-112,41,2024-02-05,Electronics,Delivered,"$1,450.00",15
+1014,CUST-113,,06-Feb-2024,Home & Kitchen,Cancelled,"$220.00",0
+1015,CUST-114,37,2024/02/08,Electronics,delivered,"$980.00",10
+1016,CUST-105,52,2024-02-11,Clothing,DLVD,"$135.00",5
+1017,CUST-115,26,13-Feb-2024,Home & Kitchen,Delivered,"$410.00",20
+1018,CUST-116,48,2024-02-15,Electronics,Pending,"$670.00",
+1019,CUST-117,,02/17/2024,Clothing,delivered,"$88.50",10
+1020,CUST-118,33,2024-02-20,Home & Kitchen,Delivered,"$175.00",0
+1021,CUST-101,34,21-Feb-2024,Electronics,delivered,"$1,100.00",15
+1022,CUST-119,55,2024/02/23,Clothing,DLVD,"$240.00",5
+1023,CUST-120,,25-Feb-2024,Home & Kitchen,Cancelled,"$95.00",
+1024,CUST-121,39,2024-02-27,Electronics,Delivered,"$1,850.00",20
+1025,CUST-122,23,03/01/2024,Clothing,pending,"$55.00",0
