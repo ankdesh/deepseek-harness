@@ -836,6 +836,41 @@ export interface Config {
 
 来源：[`packages/context/file-reference-local/src/index.ts:34`](../packages/context/file-reference-local/src/index.ts)
 
+<a id="deepseek-aidsh-flow-runtime"></a>
+
+## `@deepseek-ai/dsh-flow-runtime`
+
+需要： `storage` · `storageDomain`
+
+```ts config-catalog
+/** Explicit deployment limits. */
+export interface Config extends FlowLimits {}
+```
+
+依赖： [`FlowLimits`](../packages/workflow/flow/src/index.ts)
+
+来源： [`packages/workflow/flow-runtime/src/index.ts:46`](../packages/workflow/flow-runtime/src/index.ts)
+
+<a id="deepseek-aidsh-flow-yaml"></a>
+
+## `@deepseek-ai/dsh-flow-yaml`
+
+需要： `flows`
+
+```ts config-catalog
+/** Explicit trusted roots and whole-file bounds. */
+export interface Config {
+  /** Trusted definition files or catalog directories. */
+  roots: string[]
+  /** Maximum bytes in each definition file. */
+  maxFileBytes: number
+  /** Maximum bytes in each referenced instruction file. */
+  maxInstructionBytes: number
+}
+```
+
+来源： [`packages/workflow/flow-yaml/src/index.ts:10`](../packages/workflow/flow-yaml/src/index.ts)
+
 <a id="deepseek-aidsh-fs-local"></a>
 
 ## `@deepseek-ai/dsh-fs-local`
@@ -2928,6 +2963,22 @@ export interface Config {
 
 来源：[`packages/shell/tool-bash-persistent/src/index.ts:435`](../packages/shell/tool-bash-persistent/src/index.ts)
 
+<a id="deepseek-aidsh-tool-flow"></a>
+
+## `@deepseek-ai/dsh-tool-flow`
+
+需要： `flows` · `agents`
+
+```ts config-catalog
+/** Generic profiles use an explicit context; product integrations register scoped tools directly. */
+export interface Config {
+  /** Host-selected publication context for this deployment. */
+  context: string
+}
+```
+
+来源： [`packages/workflow/tool-flow/src/index.ts:118`](../packages/workflow/tool-flow/src/index.ts)
+
 <a id="deepseek-aidsh-tool-fs"></a>
 
 ## `@deepseek-ai/dsh-tool-fs`
@@ -3641,6 +3692,7 @@ export interface Config {
 - `@deepseek-ai/dsh-client-ui-deliverables` — 需要 `systemPrompt` · `connection` · `sessionQuery` · `sessionController`（[`packages/client/ui-deliverables/src/index.ts`](../packages/client/ui-deliverables/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-directory-picker-browse`（[`packages/client/ui-directory-picker-browse/src/index.ts`](../packages/client/ui-directory-picker-browse/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-directory-picker-native`（[`packages/client/ui-directory-picker-native/src/index.ts`](../packages/client/ui-directory-picker-native/src/index.ts)）
+- `@deepseek-ai/dsh-client-ui-flow` ([`packages/client/ui-flow/src/index.ts`](../packages/client/ui-flow/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-goal`（[`packages/client/ui-goal/src/index.ts`](../packages/client/ui-goal/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-input-trigger`（[`packages/client/ui-input-trigger/src/index.ts`](../packages/client/ui-input-trigger/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-jobs`（[`packages/client/ui-jobs/src/index.ts`](../packages/client/ui-jobs/src/index.ts)）
@@ -3681,9 +3733,11 @@ export interface Config {
 - `@deepseek-ai/dsh-computer-use` ([`packages/computer-use/computer-use/src/index.ts`](../packages/computer-use/computer-use/src/index.ts))
 - `@deepseek-ai/dsh-cordis-client-runner`（[`packages/extensions/cordis-client-runner/src/index.ts`](../packages/extensions/cordis-client-runner/src/index.ts)）
 - `@deepseek-ai/dsh-deepseek-llm-api-extensions`（[`packages/llm/deepseek-llm-api-extensions/src/index.ts`](../packages/llm/deepseek-llm-api-extensions/src/index.ts)）
+- `@deepseek-ai/dsh-event-system` — 需要 `agents` · `sessionPersistence` · `storageDomain` · `tokenMeter` ([`packages/workflow/event-system/src/index.ts`](../packages/workflow/event-system/src/index.ts))
 - `@deepseek-ai/dsh-experimental-auto-review` — 需要 `llm` · `permissionPresets` · `sessions` · `tools`（[`packages/experimental/auto-review/src/index.ts`](../packages/experimental/auto-review/src/index.ts)）
 - `@deepseek-ai/dsh-experimental-client-ui-agent-team`（[`packages/experimental/client-ui-agent-team/src/index.ts`](../packages/experimental/client-ui-agent-team/src/index.ts)）
 - `@deepseek-ai/dsh-experimental-computer-use-cua-driver-native` — requires `computerUse` · `tools` · `systemPrompt` ([`packages/experimental/computer-use-cua-driver-native/src/index.ts`](../packages/experimental/computer-use-cua-driver-native/src/index.ts))
+- `@deepseek-ai/dsh-flow-model-native` — 需要 `flows` · `agents` · `sessions` · `sessionPersistence` · `systemPrompt` · `tools` ([`packages/workflow/flow-model-native/src/index.ts`](../packages/workflow/flow-model-native/src/index.ts))
 - `@deepseek-ai/dsh-fs-observation-policy`（[`packages/fs/fs-observation-policy/src/index.ts`](../packages/fs/fs-observation-policy/src/index.ts)）
 - `@deepseek-ai/dsh-fs-ssh` — 需要 `ssh` · `sandboxPolicy`（[`packages/ssh/fs-ssh/src/index.ts`](../packages/ssh/fs-ssh/src/index.ts)）
 - `@deepseek-ai/dsh-goal-round-driver` — 需要 `agents` · `goals` · `sessions`（[`packages/goal/goal-round-driver/src/index.ts`](../packages/goal/goal-round-driver/src/index.ts)）
@@ -3725,6 +3779,7 @@ export interface Config {
 - `@deepseek-ai/dsh-compaction` — 抽象 `CompactionEngine`（[`packages/compaction/compaction/src/index.ts`](../packages/compaction/compaction/src/index.ts)）
 - `@deepseek-ai/dsh-credentials` — 抽象 `Credentials`（[`packages/credentials/credentials/src/index.ts`](../packages/credentials/credentials/src/index.ts)）
 - `@deepseek-ai/dsh-file-reference` — 抽象 `FileReferenceService`（[`packages/context/file-reference/src/index.ts`](../packages/context/file-reference/src/index.ts)）
+- `@deepseek-ai/dsh-flow` — 抽象 `FlowRuntime` ([`packages/workflow/flow/src/index.ts`](../packages/workflow/flow/src/index.ts))
 - `@deepseek-ai/dsh-fs` — 抽象 `FileSystem`（[`packages/fs/fs/src/index.ts`](../packages/fs/fs/src/index.ts)）
 - `@deepseek-ai/dsh-host-directory-picker` — 抽象 `DirectoryPicker`（[`packages/host/directory-picker/src/index.ts`](../packages/host/directory-picker/src/index.ts)）
 - `@deepseek-ai/dsh-jobs` — 抽象 `JobRegistry`（[`packages/jobs/jobs/src/index.ts`](../packages/jobs/jobs/src/index.ts)）

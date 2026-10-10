@@ -53,6 +53,8 @@ kind: "package-library"
 
 -----
 
+可选 flow profile 还通过相同 stdio transport 支持 `flow/start`、`flow/get`、`flow/list`、`flow/control`、`flow/answer` 和 `flow/trace`。控制携带执行 ID 和观察到的修订号；回答携带精确等待和稳定 delivery ID。这些方法调用共享 flow executor。`flow.progress` 携带参与 conversation 的已提交、裁剪后的进度。启动返回接受结果，trace 检查不调用模型或服务。`dsh-sdk-protocol` 导出类型化 wire 参数；调用方可使用 `HarnessClient.request()`。没有 flow executor 的 profile 拒绝这些方法。
+
 <a id="understand-the-implementation"></a>
 ## 理解实现
 

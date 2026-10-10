@@ -1,3 +1,4 @@
+import { reserveRequestTokens, reportedRequestTokens } from '@deepseek-ai/dsh-token-meter/request-accounting'
 /** Persistent conversation event agents, native execution hooks, and aggregate budgets. */
 import { randomUUID } from 'node:crypto'
 import { Context, Service } from '@deepseek-ai/cordis'
@@ -813,10 +814,36 @@ export default class EventSystemService extends Service {
     )
   }
 
+  private readonly requestBudgetRoutes = new Map<Agent, SessionId>()
+
+  /** Route a trusted host phase's spending to its existing primary conversation.
+   * @param agent - Exact live phase conversation.
+   * @param conversationId - Existing primary budget identity.
+   * @returns Scoped registration disposer.
+   */
+  routeRequestBudget(agent: Agent, conversationId: SessionId): () => void {
+    if (this.ctx.agents.get(agent.id) !== agent || !this.get(conversationId)) throw new Error('Budget route requires a live agent and existing execution')
+    if (this.requestBudgetRoutes.has(agent)) throw new Error('Model budget route already registered')
+    const routeScope = this.ctx
+    return routeScope.effect(() => {
+      const disposeCap = routeScope.on('agent/request', async (payload, next) => {
+        const config = await next()
+        if (payload.agent !== agent) return config
+        const limit = this.get(conversationId)?.limits.maxOutputTokens
+        if (limit === undefined) throw new Error('Parent budget is unavailable')
+        return { ...config, maxTokens: Math.min(config.maxTokens ?? limit, limit) }
+      })
+      this.requestBudgetRoutes.set(agent, conversationId)
+      return () => { disposeCap(); this.requestBudgetRoutes.delete(agent) }
+    })
+  }
+
   private async *meter(options: GenerateOptions, next: () => AsyncIterable<StreamChunk>): AsyncIterable<StreamChunk> {
     await this.ready
     const agent = this.ctx.agents.currentInitiator()
-    const membership = agent ? this.membership(agent.id) : undefined
+    const routed = agent ? this.requestBudgetRoutes.get(agent) : undefined
+    const parent = routed ? this.get(routed) : undefined
+    const membership = parent ? { conversationId: parent.conversationId, member: parent.definition.primary } : agent ? this.membership(agent.id) : undefined
     if (!membership) {
       yield* next()
       return
@@ -827,12 +854,8 @@ export default class EventSystemService extends Service {
       throw new Error('Member is waiting for its correlated response')
     if (options.maxTokens === undefined || options.maxTokens > snapshot.limits.maxOutputTokens)
       throw new Error('Governed model requests require an explicit bounded output token limit')
-    const tokens =
-      Math.max(
-        Buffer.byteLength(JSON.stringify({ messages: options.messages, system: options.system, tools: options.tools })),
-        // oxlint-disable-next-line typescript/no-non-null-assertion -- Owned references exist in the validated immutable ledger.
-        this.ctx.tokenMeter.measure(agent!.session).totalTokens,
-      ) + options.maxTokens
+    const tokens = reserveRequestTokens({ messages: options.messages, system: options.system, tools: options.tools }, options.maxTokens,
+      this.ctx.tokenMeter.measure(agent!.session).totalTokens)
     const request = await this.ledger.reserveRequest(snapshot.conversationId, tokens)
     if (!request) throw new Error('Execution budget exhausted or conversation is paused')
     this.updateTimeLimit(snapshot.conversationId)
@@ -844,14 +867,14 @@ export default class EventSystemService extends Service {
       }
     } finally {
       this.updateTimeLimit(snapshot.conversationId)
-      const actual = usage
-        ? usage.inputTokens + usage.outputTokens + (usage.cacheReadTokens ?? 0) + (usage.cacheWriteTokens ?? 0)
-        : undefined
+      const actual = reportedRequestTokens(usage)
       await this.ledger.settleRequest(snapshot.conversationId, request, actual)
       this.updateTimeLimit(snapshot.conversationId)
       // oxlint-disable-next-line typescript/no-non-null-assertion -- Owned references exist in the validated immutable ledger.
-      if (this.get(snapshot.conversationId)!.status === 'exhausted')
+      if (this.get(snapshot.conversationId)!.status === 'exhausted') {
         for (const member of snapshot.members) this.ctx.agents.get(member.sessionId)?.cancel({ kind: 'parent' })
+        for (const [target, source] of this.requestBudgetRoutes) if (source === snapshot.conversationId) target.cancel({ kind: 'parent' })
+      }
     }
   }
 
@@ -882,6 +905,7 @@ export default class EventSystemService extends Service {
           ),
         )
         for (const member of state.members) this.ctx.agents.get(member.sessionId)?.cancel({ kind: 'parent' })
+        for (const [target, source] of this.requestBudgetRoutes) if (source === id) target.cancel({ kind: 'parent' })
       }, remaining / active.length),
     )
   }

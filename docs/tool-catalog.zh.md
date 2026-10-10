@@ -19,6 +19,7 @@
 
 | 工具包 | 模型可见名称 | 依赖 | 写入／影响 | 随产品发布的别名 | 部署说明 |
 | --- | --- | --- | --- | --- | --- |
+| `@deepseek-ai/dsh-tool-flow` | `get_flow` | `ctx.flows`, `ctx.agents`, `ctx.tools`, `a calling native Agent` | `tool/call`, `tool/result`, `flow execution records and later native phase messages` | - | get_flow 读取进度。部署还会为每个已发布定义提供一个具名工具，其参数来自定义。启动只确认受理，结束发起轮次，并等待该轮次日志保存后执行。人工控制和决策使用共享执行 API。 |
 | `@deepseek-ai/dsh-mcp-resources` | `list_mcp_resource_templates`, `list_mcp_resources`, `read_mcp_resource` | `ctx.tools`, `ctx.mcpResources` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-experimental-browser-use-stagehand-native` | `stagehand_act`、`stagehand_extract`、`stagehand_navigate`、`stagehand_observe`、`stagehand_screenshot`、`stagehand_tabs` | `ctx.browserUse`、`ctx.agents`、`ctx.tools`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-ask-user` | `ask_user_question` | `ctx.tools`、`ctx.userQuestions` | `tool/call`、`tool/result after a UI/provider answers the question` | - | ask_user_question 会暂停工具调用，直到当前 UI 提供方返回人类答案。 |
@@ -48,6 +49,40 @@
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`、`owning Agent session` | `tool/call`、`todo/write`、`tool/result` | - | todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。 |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
+
+<a id="deepseek-aidsh-tool-flow"></a>
+
+## `@deepseek-ai/dsh-tool-flow`
+
+### `get_flow`
+
+读取此会话的 flow 进度。受理不等于完成。人工决策和生命周期控制不属于此工具。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "execution_id": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "execution_id"
+  ],
+  "additionalProperties": false
+}
+```
+
+来源： [`packages/workflow/tool-flow/src/index.ts`](../packages/workflow/tool-flow/src/index.ts)
+
+get_flow 读取进度。部署还会为每个已发布定义提供一个具名工具，其参数来自定义。启动只确认受理，结束发起轮次，并等待该轮次日志保存后执行。人工控制和决策使用共享执行 API。
 
 <a id="deepseek-aidsh-mcp-resources"></a>
 

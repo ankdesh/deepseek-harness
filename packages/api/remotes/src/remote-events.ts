@@ -7,6 +7,7 @@
  */
 
 import type {} from '@deepseek-ai/dsh-api-session-controller/remote-events'
+import type {} from '@deepseek-ai/dsh-flow/types'
 import type {} from '@deepseek-ai/dsh-permission-presets/types'
 import type { TypertForwardableEventEntry } from '@deepseek-ai/dsh-typert-protocol'
 
@@ -25,6 +26,7 @@ export const API_REMOTE_FORWARDED_EVENTS = [
   { event: 'commands/change', mode: 'emit' },
   { event: 'credentials/reference-updated', mode: 'emit' },
   { event: 'goal/activation-changed', mode: 'emit' },
+  { event: 'flow/summary-changed', mode: 'emit' },
   { event: 'cordis/request-run', mode: 'emit' },
   { event: 'cordis/request-run-resolved', mode: 'emit' },
   { event: 'cordis/dynamic-package', mode: 'emit' },

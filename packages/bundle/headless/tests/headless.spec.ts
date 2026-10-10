@@ -21,6 +21,10 @@ import { SessionQueryError } from '@deepseek-ai/dsh-session-query'
 import { createInboxStub } from '@deepseek-ai/dsh-agent-loop-testkit'
 import { apply, Config } from '../src/index.ts'
 import { internals } from '../src/runner-internals.ts'
+import Storage from '@deepseek-ai/dsh-storage'
+import { DomainFacility } from '@deepseek-ai/dsh-storage-domain'
+import { DurableFlowRuntime } from '@deepseek-ai/dsh-flow-runtime'
+import { MemoryStorageBackend } from '../../../storage/storage-domain/tests/helpers/memory-backend.ts'
 
 const originalInternals = { ...internals }
 afterEach(() => { Object.assign(internals, originalInternals) })
@@ -224,6 +228,32 @@ async function bench(script: Script, options: BenchOptions = {}): Promise<{
 }
 
 describe('headless runner', () => {
+  it('awaits an accepted flow until its correlated wait and returns its identity', async () => {
+    const definition = { id: 'headless-wait', version: '1', description: 'Read then wait', inputSchema: { type: 'object' as const }, outputSchema: { type: 'object' as const }, publication: { toolName: 'headless_wait', contexts: ['test'] }, nodes: [
+      { id: 'read', kind: 'call' as const, operation: { id: 'read', version: '1' }, inputs: {} },
+      { id: 'approval', kind: 'wait' as const, request: { question: 'Continue?' }, outputSchema: { type: 'object' as const } },
+    ], outputs: { $ref: 'nodes.approval' } }
+    let executionId: string | undefined, finishedRead = false
+    const test = await bench({ async afterPrompt(session, message, agent) {
+      appendTurn(session, 1, message, 'Execution accepted.', true)
+      const execution = await agent.ctx.flows.start({ definition, inputs: {}, context: 'test', requestId: 'one', actor: { kind: 'human', sessionId: agent.id } })
+      executionId = execution.id
+    } })
+    try {
+      await test.ctx.plugin(Storage)
+      test.ctx.storage.backend.register('memory', new MemoryStorageBackend())
+      const domain = new DomainFacility(test.ctx, { backend: 'memory', routes: {} })
+      test.ctx.storage.mount('domain', domain); test.ctx.provide('storageDomain', domain)
+      await test.ctx.plugin(DurableFlowRuntime, { maxRequests: 1, maxTokens: 1000, maxActiveMillis: 10000, maxOutputTokens: 100, maxRetainedBytes: 100000, maxExpandedNodes: 4 })
+      await test.ctx.flows.ready
+      test.ctx.flows.registerDefinition(definition)
+      test.ctx.flows.registerOperation({ id: 'read', version: '1', inputSchema: { type: 'object' }, outputSchema: { type: 'object' }, effect: 'read', cancellation: 'cooperative', recovery: 'repeat', execute: async () => { await new Promise(resolve => setTimeout(resolve, 20)); finishedRead = true; return {} } })
+      const result = await test.run()
+      expect(finishedRead).toBe(true); expect(result.code).toBe(2)
+      expect(JSON.parse(result.out.trim())).toMatchObject({ flow_execution_id: executionId, status: 'waiting', pending: { request: { question: 'Continue?' } } })
+    } finally { await test.ctx.fiber.dispose() }
+  })
+
   it('records a fresh Session in the filesystem provider working directory', async () => {
     const cwd = '/remote/workspace'
     const test = await bench({

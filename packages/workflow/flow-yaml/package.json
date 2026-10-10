@@ -1,0 +1,47 @@
+{
+  "name": "@deepseek-ai/dsh-flow-yaml",
+  "description": "Developer-authored flow definitions and pinned instructions",
+  "version": "0.1.6-alpha.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/workflow/flow-yaml"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json",
+    "./example": {
+      "types": "./lib/types/example.d.ts",
+      "default": "./lib/example.js"
+    }
+  },
+  "files": [
+    "lib/index.js",
+    "lib/example.js",
+    "examples",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-flow": "workspace:^",
+    "@deepseek-ai/schemastery": "workspace:^"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-flow": "workspace:^",
+    "@deepseek-ai/schemastery": "workspace:^"
+  },
+  "dependencies": {
+    "yaml": "^2.8.3"
+  }
+}

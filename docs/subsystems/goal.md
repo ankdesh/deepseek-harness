@@ -178,6 +178,12 @@ Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnp
 Goal service (`ctx.goals`) backed exclusively by the owning session log.
 
 ```ts cordis-catalog
+/** Register host-owned denial of competing Goal creation, Resume or completion.
+ * @param guard - Returns a diagnostic when another execution controls the objective.
+ * @returns Registration disposer.
+ */
+registerControlGuard(guard: (agent: Agent, operation: 'create' | 'resume' | 'complete') => string | undefined): () => void
+
 /**
  * Read the current goal for one exact live agent.
  * @param agent - owning live agent.

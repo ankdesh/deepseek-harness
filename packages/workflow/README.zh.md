@@ -27,6 +27,11 @@ kind: "package-group"
 | [`event-system`](event-system/README.zh.md) | 持久对话内事件 agent 与宿主聚合预算 | `ctx.eventSystems` |
 | [`event-system-yaml`](event-system-yaml/README.zh.md) | 可信 YAML 成员／订阅与 Markdown 提示词 | `ctx.eventSystemsYaml` |
 | [`event-system-http`](event-system-http/README.zh.md) | 获准 HTTP 条件、持久游标及防抖 | `ctx.eventHttpSources` |
+| [`flow`](flow/README.zh.md) | 可复用 flow 定义、执行或消费者 | flow |
+| [`flow-runtime`](flow-runtime/README.zh.md) | 可复用 flow 定义、执行或消费者 | `ctx.flows` |
+| [`flow-yaml`](flow-yaml/README.zh.md) | 可复用 flow 定义、执行或消费者 | flow |
+| [`flow-model-native`](flow-model-native/README.zh.md) | 可复用 flow 定义、执行或消费者 | flow |
+| [`tool-flow`](tool-flow/README.zh.md) | 可复用 flow 定义、执行或消费者 | flow |
 | [`workflow`](workflow/README.zh.md) | 运行由模型编写的、扇出 subagent 的编排脚本 | `ctx.workflowEngine` |
 | [`workflow-ptc`](workflow-ptc/README.zh.md) | 通过共享的沙箱化 PTC Node 进程运行时执行工作流脚本 | 注册到 `ctx.workflowEngine` |
 | [`tool-workflow`](tool-workflow/README.zh.md) | 把 `workflow` 工具交给模型，用于脚本化多 agent 编排 | 注册到 `ctx.tools` |
@@ -40,6 +45,7 @@ kind: "package-group"
 <a id="related-documentation"></a>
 ## 相关文档
 
+- [可复用 flows](../../docs/subsystems/flows.zh.md) — 定义、恢复、原生阶段和限制。
 - [工作流子系统](../../docs/subsystems/workflow.zh.md)——seam 的类型、启动请求与 `workflow/*` 事件。
 - [生成的工具目录](../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-workflow)——模型接收的 `workflow` 工具 schema。
 - [生成的工具目录](../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-ralph)——模型接收的 `ralph` 工具 schema。

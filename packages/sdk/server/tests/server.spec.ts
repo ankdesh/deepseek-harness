@@ -1187,7 +1187,7 @@ describe('HarnessSdkJsonRpcServer', () => {
     const listenerFailure = new Error('listener teardown failed')
     const on = vi.fn(() => {
       subscription += 1
-      return subscription === 1 ? () => { throw listenerFailure } : () => undefined
+      return subscription === 1 ? vi.fn(() => { throw listenerFailure }) : vi.fn(() => undefined)
     })
     const ctx = {
       on,
@@ -1197,6 +1197,7 @@ describe('HarnessSdkJsonRpcServer', () => {
     const server = new HarnessSdkJsonRpcServer(ctx, new FakeTransport())
 
     await expect(server.shutdown()).rejects.toBe(listenerFailure)
-    expect(on).toHaveBeenCalledTimes(4)
+    expect(on).toHaveBeenCalledWith('flow/summary-changed', expect.any(Function))
+    for (const result of on.mock.results) expect(result.value).toHaveBeenCalledOnce()
   })
 })

@@ -15,6 +15,7 @@ This table connects model-visible tool names to the plugin package and service s
 
 | Tool package | Model-visible names | Requires | Writes / affects | Shipped aliases | Deployment note |
 | --- | --- | --- | --- | --- | --- |
+| `@deepseek-ai/dsh-tool-flow` | `get_flow` | `ctx.flows`, `ctx.agents`, `ctx.tools`, `a calling native Agent` | `tool/call`, `tool/result`, `flow execution records and later native phase messages` | - | get_flow reads progress. Each deployment also exposes one named tool per published definition; its arguments come from that definition. Starting acknowledges acceptance, concludes the initiating turn, and defers execution until its log settles. Human controls and decisions use the shared execution API. |
 | `@deepseek-ai/dsh-mcp-resources` | `list_mcp_resource_templates`, `list_mcp_resources`, `read_mcp_resource` | `ctx.tools`, `ctx.mcpResources` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-experimental-browser-use-stagehand-native` | `stagehand_act`, `stagehand_extract`, `stagehand_navigate`, `stagehand_observe`, `stagehand_screenshot`, `stagehand_tabs` | `ctx.browserUse`, `ctx.agents`, `ctx.tools`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-ask-user` | `ask_user_question` | `ctx.tools`, `ctx.userQuestions` | `tool/call`, `tool/result after a UI/provider answers the question` | - | ask_user_question pauses the tool call until the active UI provider returns a human answer. |
@@ -44,6 +45,40 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
+
+<a id="deepseek-aidsh-tool-flow"></a>
+
+## `@deepseek-ai/dsh-tool-flow`
+
+### `get_flow`
+
+Read progress for a flow in this conversation. Acceptance is not completion. Human decisions and lifecycle controls are outside this tool.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "execution_id": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "execution_id"
+  ],
+  "additionalProperties": false
+}
+```
+
+Source: [`packages/workflow/tool-flow/src/index.ts`](../packages/workflow/tool-flow/src/index.ts)
+
+get_flow reads progress. Each deployment also exposes one named tool per published definition; its arguments come from that definition. Starting acknowledges acceptance, concludes the initiating turn, and defers execution until its log settles. Human controls and decisions use the shared execution API.
 
 <a id="deepseek-aidsh-mcp-resources"></a>
 

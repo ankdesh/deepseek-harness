@@ -99,6 +99,22 @@ const GROUP_ORDER = [
 
 const SERVICE_ROLES: ServiceRole[] = [
   {
+    key: 'flows', pkg: 'flow', title: 'Reusable flow execution', mode: 'seam',
+    implementations: ['flow-runtime'],
+    consumers: ['flow-yaml', 'flow-model-native', 'tool-flow', 'sdk-jsonrpc-server'],
+    note: 'Developer definitions pin deterministic operations, typed model phases, waits and shared limits. All consumers use named revision-checked commands.',
+  },
+  {
+    key: 'flowYaml', pkg: 'flow-yaml', title: 'Developer flow definitions', mode: 'core',
+    consumers: ['tool-flow'],
+    note: 'Trusted data-only YAML registers definitions and pins contained instruction text without service or model effects.',
+  },
+  {
+    key: 'flowController', pkg: 'flow-runtime', title: 'Remote flow controls', mode: 'core',
+    consumers: ['client-ui-flow', 'api-remotes'],
+    note: 'The browser remote API forwards start, read, control, decisions and trace inspection to the executor.',
+  },
+  {
     key: 'mcpResources',
     pkg: 'mcp-resources',
     title: 'Scoped MCP resource access',

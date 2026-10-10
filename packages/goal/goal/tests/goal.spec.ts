@@ -844,3 +844,17 @@ describe('goal replay validation', () => {
     })
   })
 })
+
+describe('trusted flow control guards', () => {
+  it('blocks competing Goal creation, Resume and completion until its guard is released', async () => {
+    const { ctx, agent } = await harness()
+    const goal = ctx.goals.create(agent, { objective: 'Complete the saved task' })
+    const paused = ctx.goals.pause(agent, goal)
+    const dispose = ctx.goals.registerControlGuard(() => 'Flow work remains unresolved')
+    expect(() => ctx.goals.create(agent, { objective: 'Competing work' })).toThrow(/Flow work/)
+    expect(() => ctx.goals.resume(agent, paused)).toThrow(/Flow work/)
+    expect(() => ctx.goals.complete(agent, paused)).toThrow(/Flow work/)
+    dispose(); expect(ctx.goals.resume(agent, paused).phase).toBe('active')
+    await ctx.fiber.dispose()
+  })
+})

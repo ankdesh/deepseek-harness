@@ -5,6 +5,9 @@
  * @module @deepseek-ai/dsh-sdk-jsonrpc-server/server
  */
 
+import { summarizeFlow } from '@deepseek-ai/dsh-flow'
+import type { FlowExecutionId } from '@deepseek-ai/dsh-flow'
+import { snapshotJsonValue } from '@deepseek-ai/dsh-util-values'
 import type { Context } from '@deepseek-ai/cordis'
 import { resolve } from 'node:path'
 import { brandString } from '@deepseek-ai/dsh-brand'
@@ -12,11 +15,14 @@ import type { Agent, AgentHandle } from '@deepseek-ai/dsh-agent'
 import { admitEncodedImages, type EncodedImageAttachment, type ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import { createUserMessage, ReasoningEffortId, type ContentBlock, type LlmRuntime } from '@deepseek-ai/dsh-llm'
 import { carrierKeyOf, type Scoped } from '@deepseek-ai/dsh-scope'
-import type { SessionId } from '@deepseek-ai/dsh-session'
+import { SessionId } from '@deepseek-ai/dsh-session'
 import type SubagentRuntime from '@deepseek-ai/dsh-subagent'
 import type { SubagentRunEndInfo } from '@deepseek-ai/dsh-subagent'
 import * as LlmDeepSeek from '@deepseek-ai/dsh-llm-deepseek'
 import type {
+  SdkFlowStartParams,
+  SdkFlowControlParams,
+  SdkFlowAnswerParams,
   InitializeParams,
   InitializeResult,
   JsonRpcTransportPeer,
@@ -96,6 +102,7 @@ export class HarnessSdkJsonRpcServer {
       const payload: SessionEventNotification = { sessionId: String(session.id), event }
       this.transport.notify('session.event', payload)
     }))
+    this.disposers.push(ctx.on('flow/summary-changed', (summary) => { for (const sessionId of summary.conversations) this.transport.notify('flow.progress', { sessionId, flow: summary }) }))
     this.disposers.push(ctx.on('agent/status', ({ agent, status }) => {
       this.transport.notify('session.status', { sessionId: String(agent.session.id), status })
     }))
@@ -249,6 +256,13 @@ export class HarnessSdkJsonRpcServer {
         return this.initialize(params as unknown as InitializeParams)
       case 'session/prompt':
         return this.prompt(params as unknown as SessionPromptParams)
+      case 'flow/start':
+      case 'flow/get':
+      case 'flow/list':
+      case 'flow/control':
+      case 'flow/answer':
+      case 'flow/trace':
+        return this.flowRequest(method, params)
       case 'shutdown':
         return this.shutdown()
       default:
@@ -256,6 +270,30 @@ export class HarnessSdkJsonRpcServer {
     }
   }
 
+  private async flowRequest(method: string, params: Record<string, unknown> | undefined): Promise<unknown> {
+    if (!this.initialized || this.shuttingDown) throw new Error('Flow commands require an initialized SDK runtime')
+    const flows = this.ctx.get('flows')
+    if (!flows) throw new Error('This profile has no flow executor')
+    if (!params || typeof params.sessionId !== 'string' || !params.sessionId.trim()) throw new TypeError('Flow command requires sessionId')
+    await flows.ready
+    const actor = { kind: 'human' as const, sessionId: SessionId(params.sessionId) }
+    if (method === 'flow/start') {
+      const input = params as unknown as SdkFlowStartParams
+      await this.getOrCreateSession(input.sessionId)
+      return summarizeFlow(await flows.start({ definition: input.definition, inputs: input.inputs, context: input.context, requestId: input.requestId, actor }))
+    }
+    if (method === 'flow/list') return flows.list(actor).map(summarizeFlow)
+    if (typeof params.executionId !== 'string' || !params.executionId) throw new TypeError('Flow command requires executionId')
+    const id = params.executionId as FlowExecutionId
+    if (method === 'flow/get') return summarizeFlow(flows.get(id, actor))
+    if (method === 'flow/trace') return snapshotJsonValue(flows.trace(id, actor))
+    if (method === 'flow/control') {
+      const input = params as unknown as SdkFlowControlParams
+      return summarizeFlow(await flows.control(id, input.revision, input.command, actor))
+    }
+    const input = params as unknown as SdkFlowAnswerParams
+    return summarizeFlow(await flows.answer(id, input.revision, input.waitId, input.deliveryId, input.value, actor))
+  }
   private async getOrCreateSession(sessionId: string): Promise<SessionRecord> {
     if (this.shuttingDown) throw new Error('SDK server is shutting down')
     const existing = this.sessions.get(sessionId)

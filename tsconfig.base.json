@@ -28,6 +28,17 @@
     // not declaration path aliases, keep each package/vendor source compiled
     // under its own tsconfig boundary.
     "paths": {
+      "@deepseek-ai/dsh-flow-yaml/example": ["./packages/workflow/flow-yaml/src/example.ts"],
+      "@deepseek-ai/dsh-flow/types": ["./packages/workflow/flow/src/types.ts"],
+      "@deepseek-ai/dsh-client-ui-flow": ["./packages/client/ui-flow/src"],
+      "@deepseek-ai/dsh-client-ui-flow/client": ["./packages/client/ui-flow/src/client/index.ts"],
+      "@deepseek-ai/dsh-flow": ["./packages/workflow/flow/src/index.ts"],
+      "@deepseek-ai/dsh-flow-runtime": ["./packages/workflow/flow-runtime/src/index.ts"],
+      "@deepseek-ai/dsh-flow-yaml": ["./packages/workflow/flow-yaml/src/index.ts"],
+      "@deepseek-ai/dsh-flow-model-native/invariant": ["./packages/workflow/flow-model-native/src/invariant.ts"],
+      "@deepseek-ai/dsh-flow-model-native": ["./packages/workflow/flow-model-native/src/index.ts"],
+      "@deepseek-ai/dsh-tool-flow": ["./packages/workflow/tool-flow/src/index.ts"],
+
       "@deepseek-ai/dsh-event-system-yaml": ["./packages/workflow/event-system-yaml/src/index.ts"],
       "@deepseek-ai/dsh-event-system": ["./packages/workflow/event-system/src/index.ts"],
       "@deepseek-ai/dsh-event-system/types": ["./packages/workflow/event-system/src/types.ts"],

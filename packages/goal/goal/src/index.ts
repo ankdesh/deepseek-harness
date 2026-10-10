@@ -238,6 +238,26 @@ function resolveBlockReason(reason: unknown): GoalBlockReason {
 
 /** Goal service (`ctx.goals`) backed exclusively by the owning session log. */
 export class GoalService extends TypertRemoteService {
+  private readonly controlGuards = new Set<(agent: Agent, operation: 'create' | 'resume' | 'complete') => string | undefined>()
+
+  /** Register host-owned denial of competing Goal creation, Resume or completion.
+   * @param guard - Returns a diagnostic when another execution controls the objective.
+   * @returns Registration disposer.
+   */
+  registerControlGuard(guard: (agent: Agent, operation: 'create' | 'resume' | 'complete') => string | undefined): () => void {
+    return this.ctx.effect(() => {
+      this.controlGuards.add(guard)
+      return () => { this.controlGuards.delete(guard) }
+    })
+  }
+
+  private checkControlGuards(agent: Agent, operation: 'create' | 'resume' | 'complete'): void {
+    for (const guard of this.controlGuards) {
+      const reason = guard(agent, operation)
+      if (reason) throw new GoalError(reason, 'GOAL_INVALID_TRANSITION')
+    }
+  }
+
   static inject = ['agents', 'sessionProjections']
 
   static Config: z<Config> = z.object({
@@ -301,6 +321,7 @@ export class GoalService extends TypertRemoteService {
    * @returns the created live view.
    */
   create(agent: Agent, request: CreateGoalRequest): GoalView {
+    this.checkControlGuards(agent, 'create')
     const spec = resolveCreateGoal(request, this.resolved.defaultMaxGoalRounds)
     const [state, runtime] = this.prepareMutation(agent)
     const current = state?.goal
@@ -362,6 +383,7 @@ export class GoalService extends TypertRemoteService {
    */
   @Remote('resume')
   resume(agent: Agent, ref: GoalRef): GoalView {
+    this.checkControlGuards(agent, 'resume')
     const [state, runtime] = this.prepareMutation(agent)
     const currentState = this.expectCurrent(state, ref)
     const current = currentState.goal
@@ -389,6 +411,7 @@ export class GoalService extends TypertRemoteService {
    */
   @Remote('complete')
   complete(agent: Agent, ref: GoalRef): GoalView {
+    this.checkControlGuards(agent, 'complete')
     return this.transition(
       agent,
       ref,

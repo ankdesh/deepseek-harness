@@ -13,6 +13,12 @@ export type { JsonRpcTransportPeer } from './transport.ts'
 export type {
   HarnessSdkNotificationMap,
   HarnessSdkRequestMap,
+  SdkFlowProgress,
+  SdkFlowStartParams,
+  SdkFlowReadParams,
+  SdkFlowSessionParams,
+  SdkFlowControlParams,
+  SdkFlowAnswerParams,
   InitializeParams,
   InitializeResult,
   SdkEncodedImageBlock,

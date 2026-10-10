@@ -1,3 +1,4 @@
+import { settleRequestTokens } from '@deepseek-ai/dsh-token-meter/request-accounting'
 /** Atomic durable routing and resource admission for one conversation. */
 import { createHash, randomUUID } from 'node:crypto'
 import { assertSupportedJsonSchema, validateJsonSchemaValue } from '@deepseek-ai/dsh-tools'
@@ -354,7 +355,7 @@ export class EventSystemLedger {
           ? request
           : {
             ...request,
-            tokens: tokens ?? request.tokens,
+            tokens: settleRequestTokens(request.tokens, tokens),
             activeMillis: Math.max(0, Date.now() - request.startedAt),
             settled: true,
           },

@@ -23,7 +23,11 @@
       "default": "./lib/types/client.js"
     },
     "./src/*": "./src/*",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./request-accounting": {
+      "types": "./lib/types/request-accounting.d.ts",
+      "default": "./lib/types/request-accounting.js"
+    }
   },
   "files": [
     "lib/index.js",

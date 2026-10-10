@@ -10,6 +10,7 @@
  * @module @deepseek-ai/dsh-headless
  */
 
+import type {} from '@deepseek-ai/dsh-flow'
 import { randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
@@ -357,6 +358,9 @@ async function run(ctx: Context, config: Config, io: HeadlessIo): Promise<void> 
     // re-read the log the runner holds before submitting the task.
     assertAdoptable(agent.session.header, liveEvents(agent.session), sessionId, cwd)
   }
+  const flowRuntime = ctx.get('flows')
+  await flowRuntime?.ready
+  const priorFlowIds = new Set(flowRuntime?.list({ kind: 'host', sessionId: agent.id }).map(f => f.id))
   const firstSeq = agent.session.seq
   const projection = config.json === true ? projectJsonRun(ctx, agent, io.stdout, { cwd }) : undefined
   const stopReasoning = projection === undefined ? streamReasoning(ctx, agent, io.stderr) : undefined
@@ -370,14 +374,19 @@ async function run(ctx: Context, config: Config, io: HeadlessIo): Promise<void> 
     } finally {
       stopReasoning?.()
     }
+    const flows = ctx.get('flows')
+    const pendingFlow = flows?.list({ kind: 'host', sessionId: agent.id }).findLast(flow => !priorFlowIds.has(flow.id))
+    const flowResult = pendingFlow ? await flows!.settled(pendingFlow.id) : undefined
     await sessions.flush(agent.session)
     const outcome = summarize(agent.session, firstSeq)
+    if (flowResult) outcome.text = JSON.stringify({ flow_execution_id: flowResult.id, status: flowResult.status,
+      ...(flowResult.pending ? { pending: flowResult.pending } : {}), ...(flowResult.result === undefined ? {} : { result: flowResult.result }), ...(flowResult.error ? { error: flowResult.error } : {}) })
     if (projection === undefined) io.stdout.write(outcome.text + '\n')
     else projection.finish(outcome.text)
     if (outcome.reason?.kind === 'error') {
       io.stderr.write(`dsh: ${outcome.reason.error.code}: ${outcome.reason.error.message}\n`)
     }
-    io.exit(outcome.reason?.kind === 'completed' ? 0 : 1)
+    io.exit(flowResult ? flowResult.status === 'succeeded' ? 0 : flowResult.status === 'waiting' ? 2 : 1 : outcome.reason?.kind === 'completed' ? 0 : 1)
   } finally {
     projection?.dispose()
   }

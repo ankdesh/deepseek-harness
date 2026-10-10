@@ -55,6 +55,8 @@ import * as ToolPty from '@deepseek-ai/dsh-tool-terminal'
 import * as ToolGoal from '@deepseek-ai/dsh-tool-goal'
 import SWorkflowService from '@deepseek-ai/dsh-s-workflow'
 import * as ToolSWorkflow from '@deepseek-ai/dsh-tool-s-workflow'
+import { registerFlowTools } from '@deepseek-ai/dsh-tool-flow'
+import type { FlowRuntime } from '@deepseek-ai/dsh-flow'
 import * as ToolSchedule from '@deepseek-ai/dsh-schedule'
 import Lsp from '@deepseek-ai/dsh-lsp'
 import * as ToolLsp from '@deepseek-ai/dsh-tool-lsp'
@@ -201,6 +203,24 @@ export interface ToolPackage {
  * guard proves it is exhaustive against the on-disk glob.
  */
 const TOOL_PACKAGES: ToolPackage[] = [
+  {
+    pkg: '@deepseek-ai/dsh-tool-flow', dir: 'tool-flow',
+    source: 'packages/workflow/tool-flow/src/index.ts',
+    requires: ['ctx.flows', 'ctx.agents', 'ctx.tools', 'a calling native Agent'],
+    writes: ['tool/call', 'tool/result', 'flow execution records and later native phase messages'],
+    async mount(ctx) {
+      // No definitions are published during harvest. Composite tool schemas
+      // belong to the deployment's definitions, not a handwritten handler.
+      ctx.provide('flows', { catalog: () => [] } as unknown as FlowRuntime)
+      const agent = { id: SessionId('tool-catalog-flow') } as Agent
+      await mountCatalogChildScope(ctx, (child) => {
+        const scoped = { ...agent, ctx: child } as Agent
+        child.effect(() => registerFlowTools(scoped, ctx.flows, 'catalog'))
+      }, agent, ['tools', 'systemPrompt', 'flows'])
+    },
+    scope: ctx => catalogChildScopes.get(ctx) as Agent,
+    note: 'get_flow reads progress. Each deployment also exposes one named tool per published definition; its arguments come from that definition. Starting acknowledges acceptance, concludes the initiating turn, and defers execution until its log settles. Human controls and decisions use the shared execution API.',
+  },
   {
     pkg: '@deepseek-ai/dsh-mcp-resources',
     dir: 'mcp-resources',

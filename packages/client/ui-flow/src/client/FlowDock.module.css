@@ -1,0 +1,2 @@
+.flow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; color: var(--dsw-alias-label-primary); }
+.flow button { color: inherit; background: var(--dsw-alias-bg-base); border: 1px solid var(--dsw-alias-border-l1); border-radius: 4px; }

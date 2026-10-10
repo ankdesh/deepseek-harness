@@ -42,6 +42,8 @@ import {
 } from './structured.ts'
 
 export {
+  attachStructuredRuntime,
+  type StructuredAttachment,
   STRUCTURED_OUTPUT_TOOL,
   STRUCTURED_OUTPUT_INSTRUCTION,
 } from './structured.ts'

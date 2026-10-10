@@ -1,0 +1,57 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../../vendor/cosmokit"
+    },
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../flow"
+    },
+    {
+      "path": "../../core/agent"
+    },
+    {
+      "path": "../../core/session"
+    },
+    {
+      "path": "../../core/tools"
+    },
+    {
+      "path": "../../llm/llm"
+    },
+    {
+      "path": "../../core/system-prompt"
+    },
+    {
+      "path": "../../subagent/subagent-in-process-driver"
+    },
+    {
+      "path": "../../util/values"
+    },
+    {
+      "path": "../../session/session-persistence"
+    },
+    {
+      "path": "../../runtime-diagnostics/invariants"
+    },
+    {
+      "path": "../../llm/token-meter"
+    },
+    {
+      "path": "../../llm/llm-retry/tsconfig.json"
+    },
+    {
+      "path": "../../typert/registry/tsconfig.json"
+    }
+  ]
+}

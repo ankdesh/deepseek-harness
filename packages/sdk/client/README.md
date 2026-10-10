@@ -55,6 +55,8 @@ The client exports typed errors for every failure mode: `JsonRpcResponseError` (
 
 -----
 
+An opted-in flow profile also supports `flow/start`, `flow/get`, `flow/list`, `flow/control`, `flow/answer`, and `flow/trace` through the same stdio transport. Controls carry the execution ID and observed revision; answers carry the exact wait and stable delivery ID. These methods call the shared flow executor. `flow.progress` carries committed cropped progress for a participating conversation. Starting returns acceptance, while trace inspection invokes neither models nor services. The typed wire parameters are exported by `dsh-sdk-protocol`; callers can use `HarnessClient.request()`. A profile without a flow executor rejects these methods.
+
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
 

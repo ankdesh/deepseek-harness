@@ -930,6 +930,161 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'flowController',
+    summary: 'Optional Typert consumer; transport callers cannot set execution state.',
+    description: 'Optional Typert consumer; transport callers cannot set execution state.',
+    methods: [
+      {
+        signature: '@Remote(\'start\') async start( agent: Agent, definition: FlowRef, context: string, inputs: JsonValue, requestId: string, ): Promise<FlowSummary>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'definition', description: 'Published pinned version.' }, { name: 'context', description: 'Eligible deployment context.' }, { name: 'inputs', description: 'Typed arguments.' }, { name: 'requestId', description: 'Stable caller identity.' }],
+        returns: 'Accepted execution summary.',
+      },
+      {
+        signature: '@Remote(\'get\') async get(agent: Agent, id: FlowExecutionId): Promise<FlowSummary>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'id', description: 'Execution identity.' }],
+        returns: 'Its current summary.',
+      },
+      {
+        signature: '@Remote(\'list\') async list(agent: Agent): Promise<FlowSummary[]>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller conversation.' }],
+        returns: 'Its recent execution summaries.',
+      },
+      {
+        signature: '@Remote(\'control\') async control( agent: Agent, id: FlowExecutionId, revision: number, command: FlowControl, ): Promise<FlowSummary>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'command', description: 'Human command.' }],
+        returns: 'Committed summary.',
+      },
+      {
+        signature: '@Remote(\'answer\') async answer( agent: Agent, id: FlowExecutionId, revision: number, waitId: string, deliveryId: string, value: JsonValue, ): Promise<FlowSummary>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'waitId', description: 'Exact wait.' }, { name: 'deliveryId', description: 'Stable response.' }, { name: 'value', description: 'Typed response.' }],
+        returns: 'Committed summary.',
+      },
+      {
+        signature: '@Remote(\'trace\') async trace(agent: Agent, id: FlowExecutionId): Promise<JsonValue>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'id', description: 'Execution.' }],
+        returns: 'Offline trace, without model or service access.',
+      },
+    ],
+  },
+  {
+    key: 'flows',
+    summary: 'Swappable executor; consumers never select arbitrary next states.',
+    description: 'Swappable executor; consumers never select arbitrary next states.',
+    methods: [
+      {
+        signature: 'abstract readonly ready: Promise<void>',
+        description: 'Provider startup and recovery barrier.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract registerDefinition(definition: FlowDefinition): () => void',
+        description: 'Register an immutable developer definition.',
+        parameters: [{ name: 'definition', description: 'Developer-authored definition.' }],
+        returns: 'Registration disposer.',
+      },
+      {
+        signature: 'abstract registerOperation(operation: FlowOperation): () => void',
+        description: 'Register a versioned typed operation.',
+        parameters: [{ name: 'operation', description: 'Registered operation.' }],
+        returns: 'Registration disposer.',
+      },
+      {
+        signature: 'abstract registerModelProvider(provider: FlowModelProvider): () => void',
+        description: 'Register the native model phase provider.',
+        parameters: [{ name: 'provider', description: 'Model phase executor.' }],
+        returns: 'Registration disposer.',
+      },
+      {
+        signature: 'abstract catalog(context: string): readonly FlowDefinition[]',
+        description: 'Read definitions published for the selected caller context.',
+        parameters: [{ name: 'context', description: 'Caller domain context.' }],
+        returns: 'Published exact definitions.',
+      },
+      {
+        signature: 'abstract compile(ref: FlowRef): CompiledFlow',
+        description: 'Validate and pin a definition without external effects.',
+        parameters: [{ name: 'ref', description: 'Exact definition.' }],
+        returns: 'Validated compiled graph.',
+      },
+      {
+        signature: 'abstract start(request: FlowStart): Promise<FlowView>',
+        description: 'Record an authorized execution and return acceptance.',
+        parameters: [{ name: 'request', description: 'Authorized invocation.' }],
+        returns: 'Accepted durable execution.',
+      },
+      {
+        signature: 'abstract get(id: FlowExecutionId, actor: FlowActor): FlowView',
+        description: 'Read an execution in the caller conversation.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'actor', description: 'Derived caller.' }],
+        returns: 'Current authorized state.',
+      },
+      {
+        signature: 'abstract list(actor: FlowActor): readonly FlowView[]',
+        description: 'List recent executions in the caller conversation.',
+        parameters: [{ name: 'actor', description: 'Derived caller.' }],
+        returns: 'Executions in the caller\'s conversations.',
+      },
+      {
+        signature: 'abstract active(session: SessionId): boolean',
+        description: 'Check whether a flow claims this conversation.',
+        parameters: [{ name: 'session', description: 'Participant.' }],
+        returns: 'Whether a nonterminal execution claims it.',
+      },
+      {
+        signature: 'abstract settled(id: FlowExecutionId): Promise<FlowView>',
+        description: 'Await a decision or terminal result.',
+        parameters: [{ name: 'id', description: 'Accepted execution.' }],
+        returns: 'Settles at the first wait or terminal result.',
+      },
+      {
+        signature: 'abstract reserveModelEnvelope(id: FlowExecutionId, operationId: string, tokens: number): Promise<void>',
+        description: 'Reserve actual native request bytes before provider access.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'operationId', description: 'Exact model attempt.' }, { name: 'tokens', description: 'Conservative input/output capacity.' }],
+      },
+      {
+        signature: 'abstract advance(id: FlowExecutionId): void',
+        description: 'Advance an accepted execution after its initiating turn settles.',
+        parameters: [{ name: 'id', description: 'Accepted execution whose initiating turn committed.' }],
+      },
+      {
+        signature: 'abstract control( id: FlowExecutionId, revision: number, command: FlowControl, actor: FlowActor, ): Promise<FlowView>',
+        description: 'Apply a revision-checked human or trusted host control.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'command', description: 'Human command.' }, { name: 'actor', description: 'Caller.' }],
+        returns: 'Committed state.',
+      },
+      {
+        signature: 'abstract answer( id: FlowExecutionId, revision: number, waitId: string, deliveryId: string, value: JsonValue, actor: FlowActor, ): Promise<FlowView>',
+        description: 'Commit the typed response to an exact pending wait.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'waitId', description: 'Exact wait.' }, { name: 'deliveryId', description: 'Stable decision.' }, { name: 'value', description: 'Typed decision.' }, { name: 'actor', description: 'Caller.' }],
+        returns: 'Committed state.',
+      },
+      {
+        signature: 'abstract reportWaitDiagnostic( id: FlowExecutionId, revision: number, waitId: string, message: string | undefined, actor: FlowActor, ): Promise<FlowView>',
+        description: 'Report a correlated wait\'s current diagnostic without changing progress.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'waitId', description: 'Exact wait.' }, { name: 'message', description: 'Current read failure, or undefined when resolved.' }, { name: 'actor', description: 'Trusted caller.' }],
+        returns: 'Committed view.',
+      },
+      {
+        signature: 'abstract trace(id: FlowExecutionId, actor: FlowActor): FlowView',
+        description: 'Read an offline trace without invoking external effects.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'actor', description: 'Caller.' }],
+        returns: 'Offline trace without invoking effects.',
+      },
+    ],
+  },
+  {
+    key: 'flowYaml',
+    summary: 'Loader provider; registrations unwind with its plugin fiber.',
+    description: 'Loader provider; registrations unwind with its plugin fiber.',
+    methods: [],
+  },
+  {
     key: 'fs',
     summary: 'Abstract filesystem provider.',
     description: 'Abstract filesystem provider. Targets must preserve identity across aliases; reads expose regular UTF-8 text or typed errors, listings are stable and content-free, and mutations are atomic. Optional guards add stale protection without changing the unguarded provider contract.',
@@ -1025,6 +1180,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     summary: 'Goal service (`ctx.goals`) backed exclusively by the owning session log.',
     description: 'Goal service (`ctx.goals`) backed exclusively by the owning session log.',
     methods: [
+      {
+        signature: 'registerControlGuard(guard: (agent: Agent, operation: \'create\' | \'resume\' | \'complete\') => string | undefined): () => void',
+        description: 'Register host-owned denial of competing Goal creation, Resume or completion.',
+        parameters: [{ name: 'guard', description: 'Returns a diagnostic when another execution controls the objective.' }],
+        returns: 'Registration disposer.',
+      },
       {
         signature: '@Remote(\'get\') get(agent: Agent): GoalView | undefined',
         description: 'Read the current goal for one exact live agent.',
@@ -2743,6 +2904,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Tool registry and execution pipeline. Scoped registrations shadow globals; one visibility resolver feeds presentation, lookup, and dispatch.',
     methods: [
       {
+        signature: 'modeFor(scope?: ScopeKey): ToolPresentationMode',
+        description: 'The presentation one scope\'s agent sees: its own declaration, else the deployment default.',
+        parameters: [{ name: 'scope', description: 'the calling agent, or undefined for the global view.' }],
+        returns: 'the resolved presentation mode.',
+      },
+      {
         signature: 'presentAs(mode: ToolPresentationMode): () => void',
         description: 'Present the calling scope\'s tools in `mode` instead of the deployment default. Nearest scope on the chain wins, so a preset\'s standing declaration covers every agent joined under it.\n\nScoped only, and one declaration per scope: this is how an agent preset composes PTC mode agents beside native ones in the same process, and a process-global override would be the `mode` config field instead.',
         parameters: [{ name: 'mode', description: 'the presentation the covered agents\' models see.' }],
@@ -3427,6 +3594,54 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'inspection', description: 'committed canonical prefix, including the feedback as its last event.' }],
   },
   {
+    name: 'flow/catalog-changed',
+    mode: 'emit',
+    signature: '\'flow/catalog-changed\'(): void',
+    summary: 'Catalog contributions changed.',
+    description: 'Catalog contributions changed.',
+    parameters: [],
+  },
+  {
+    name: 'flow/changed',
+    mode: 'parallel',
+    signature: '\'flow/changed\'(value: FlowView): void | Promise<void>',
+    summary: 'A durable execution revision committed.',
+    description: 'A durable execution revision committed.',
+    parameters: [{ name: 'value', description: 'Committed execution.' }],
+  },
+  {
+    name: 'flow/control-accepted',
+    mode: 'serial',
+    signature: '\'flow/control-accepted\'(payload: { flow: FlowView command: FlowControl commandId: string actor: FlowActor }): void | Promise<void>',
+    summary: 'A committed control awaits trusted host delivery.',
+    description: 'A committed control awaits trusted host delivery.',
+    parameters: [{ name: 'payload', description: 'Pinned command identity and caller.' }],
+  },
+  {
+    name: 'flow/model-input-accepted',
+    mode: 'serial',
+    signature: '\'flow/model-input-accepted\'(payload: { executionId: FlowOperationContext[\'executionId\'] agent: Agent }): void | Promise<void>',
+    summary: 'A native phase inbox receipt has been persisted.',
+    description: 'A native phase inbox receipt has been persisted.',
+    parameters: [{ name: 'payload', description: 'Exact execution and destination.' }],
+  },
+  {
+    name: 'flow/model-phase',
+    mode: 'serial',
+    signature: '\'flow/model-phase\'(payload: { agent: Agent executionId: FlowOperationContext[\'executionId\'] sourceSessionId: SessionId instructions: string scope: Context }): void | Promise<void>',
+    summary: 'Bind host policies to one phase scope.',
+    description: 'Bind host policies to one phase scope.',
+    parameters: [{ name: 'payload', description: 'Exact native phase and source.' }],
+  },
+  {
+    name: 'flow/summary-changed',
+    mode: 'emit',
+    signature: '\'flow/summary-changed\'(value: FlowSummary): void',
+    summary: 'A cropped committed execution read.',
+    description: 'A cropped committed execution read.',
+    parameters: [{ name: 'value', description: 'Progress without private drafts.' }],
+  },
+  {
     name: 'fs/edit-intent',
     mode: 'waterfall',
     signature: '\'fs/edit-intent\'(target: FsTarget, actor: object | undefined, next: () => { version: FsVersion } | undefined | Promise<{ version: FsVersion } | undefined>): Promise<{ version: FsVersion } | undefined>',
@@ -4031,6 +4246,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type CompactionTrigger = \'pressure\' | \'context-overflow\';',
   },
   {
+    name: 'CompiledFlow',
+    declaration: 'export interface CompiledFlow extends FlowDefinition {\n    readonly digest: string;\n    readonly subflows: Readonly<Record<string, CompiledFlow>>;\n    readonly operations: Readonly<Record<string, string>>;\n    readonly expandedNodes: number;\n}',
+  },
+  {
     name: 'CompositionRowEnablement',
     declaration: 'export type CompositionRowEnablement = boolean | \'conditional\';',
   },
@@ -4377,6 +4596,110 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'FinishReasonMap',
     declaration: 'export interface FinishReasonMap {\n    \'stop\': {\n        kind: \'stop\';\n    };\n    \'tool-calls\': {\n        kind: \'tool-calls\';\n    };\n    \'max-tokens\': {\n        kind: \'max-tokens\';\n    };\n    \'aborted\': {\n        kind: \'aborted\';\n        failure: LlmFailure;\n    };\n    \'error\': {\n        kind: \'error\';\n        failure: LlmFailure;\n    };\n}',
+  },
+  {
+    name: 'FlowActor',
+    declaration: 'export interface FlowActor {\n    readonly sessionId: SessionId;\n    readonly kind: \'model\' | \'human\' | \'host\';\n}',
+  },
+  {
+    name: 'FlowBranchNode',
+    declaration: 'export interface FlowBranchNode extends FlowNodeBase {\n    readonly kind: \'branch\';\n    readonly value: FlowValue;\n    readonly equals: JsonValue;\n    readonly then: string | null;\n    readonly otherwise: string | null;\n}',
+  },
+  {
+    name: 'FlowCallNode',
+    declaration: 'export interface FlowCallNode extends FlowNodeBase {\n    readonly kind: \'call\';\n    readonly operation: FlowRef;\n    readonly inputs: FlowValue;\n}',
+  },
+  {
+    name: 'FlowControl',
+    declaration: 'export type FlowControl = \'pause\' | \'resume\' | \'cancel\';',
+  },
+  {
+    name: 'FlowDefinition',
+    declaration: 'export interface FlowDefinition extends FlowRef {\n    readonly description: string;\n    readonly inputSchema: ObjectJsonSchema;\n    readonly outputSchema: JsonSchemaNode;\n    readonly nodes: readonly FlowNode[];\n    readonly outputs: FlowValue;\n    readonly publication?: {\n        readonly toolName: string;\n        readonly contexts: readonly string[];\n    };\n}',
+  },
+  {
+    name: 'FlowExecution',
+    declaration: 'export interface FlowExecution {\n    readonly id: FlowExecutionId;\n    readonly revision: number;\n    readonly definition: CompiledFlow;\n    readonly sourceSessionId: SessionId;\n    readonly conversations: readonly SessionId[];\n    readonly startKey: string;\n    readonly inputs: JsonValue;\n    readonly inputDigest: string;\n    readonly status: FlowStatus;\n    readonly frames: readonly FlowFrame[];\n    readonly nodes: readonly FlowNodeRecord[];\n    readonly pending?: FlowPending;\n    readonly result?: JsonValue;\n    readonly error?: string;\n    readonly limits: FlowLimits;\n    readonly usage: {\n        readonly requests: number;\n        readonly tokens: number;\n        readonly activeMillis: number;\n    };\n    readonly decisions: Readonly<Record<string, {\n        readonly digest: string;\n        readonly value: JsonValue;\n    }>>;\n    readonly deliveries?: Readonly<Record<string, {\n        readonly command: FlowControl;\n        readonly actor: FlowActor;\n        readonly observedRevision: number;\n        readonly state: \'pending\' | \'delivered\';\n    }>>;\n    readonly parentExecutionId?: FlowExecutionId;\n    readonly callerContext?: JsonValue;\n    readonly modelOptions?: JsonValue;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
+  },
+  {
+    name: 'FlowExecutionId',
+    declaration: 'export type FlowExecutionId = Branded<\'FlowExecutionId\'>;',
+  },
+  {
+    name: 'FlowFrame',
+    declaration: 'export interface FlowFrame {\n    readonly path: string;\n    readonly definition: CompiledFlow;\n    readonly inputs: JsonValue;\n    readonly node: string | null;\n    readonly outputs: Readonly<Record<string, JsonValue>>;\n    readonly result?: JsonValue;\n}',
+  },
+  {
+    name: 'FlowLimits',
+    declaration: 'export interface FlowLimits {\n    readonly maxRequests: number;\n    readonly maxTokens: number;\n    readonly maxActiveMillis: number;\n    readonly maxOutputTokens: number;\n    readonly maxRetainedBytes: number;\n    readonly maxExpandedNodes: number;\n}',
+  },
+  {
+    name: 'FlowModelNode',
+    declaration: 'export interface FlowModelNode extends FlowNodeBase {\n    readonly kind: \'model\';\n    readonly instructions: string;\n    readonly inputs: FlowValue;\n    readonly outputSchema: ObjectJsonSchema;\n    readonly conversation?: FlowValue;\n}',
+  },
+  {
+    name: 'FlowModelProvider',
+    declaration: 'export interface FlowModelProvider {\n    execute(node: FlowModelNode, inputs: JsonValue, conversation: SessionId, context: FlowOperationContext, limits: FlowLimits): Promise<FlowModelResult>;\n    reconcile?(node: FlowModelNode, conversation: SessionId, context: FlowOperationContext): Promise<FlowModelResult | undefined>;\n}',
+  },
+  {
+    name: 'FlowModelResult',
+    declaration: 'export interface FlowModelResult {\n    readonly value: JsonValue;\n    readonly tokens?: number;\n}',
+  },
+  {
+    name: 'FlowNode',
+    declaration: 'export type FlowNode = FlowCallNode | FlowModelNode | FlowWaitNode | FlowBranchNode | FlowSubflowNode;',
+  },
+  {
+    name: 'FlowNodeBase',
+    declaration: 'export interface FlowNodeBase {\n    readonly id: string;\n    readonly next?: string | null;\n    readonly result?: FlowValue;\n}',
+  },
+  {
+    name: 'FlowNodeRecord',
+    declaration: 'export interface FlowNodeRecord {\n    readonly id: string;\n    readonly kind: FlowNode[\'kind\'];\n    readonly operationId: string;\n    readonly attempt: number;\n    readonly state: \'running\' | \'waiting\' | \'succeeded\' | \'failed\' | \'unknown\';\n    readonly inputs: JsonValue;\n    readonly startedAt: number;\n    readonly completedAt?: number;\n    readonly dispatchState?: \'pending\' | \'dispatched\';\n    readonly activeStartedAt?: number;\n    readonly activeMillis?: number;\n    readonly output?: JsonValue;\n    readonly error?: string;\n    readonly tokens?: number;\n    readonly usageReported?: boolean;\n    readonly reservedTokens?: number;\n    readonly reservationSettled?: boolean;\n}',
+  },
+  {
+    name: 'FlowOperation',
+    declaration: 'export interface FlowOperation<I = JsonValue, O = JsonValue> extends FlowRef {\n    readonly inputSchema: JsonSchemaNode;\n    readonly outputSchema: JsonSchemaNode;\n    readonly cancellation: \'cooperative\' | \'await-settlement\';\n    readonly effect: \'read\' | \'write\';\n    readonly recovery: \'repeat\' | \'receipt\' | \'manual\';\n    execute(inputs: I, context: FlowOperationContext): Promise<O>;\n    reconcile?(inputs: I, context: FlowOperationContext): Promise<O | undefined>;\n}',
+  },
+  {
+    name: 'FlowOperationContext',
+    declaration: 'export interface FlowOperationContext {\n    readonly executionId: FlowExecutionId;\n    readonly nodeId: string;\n    readonly operationId: string;\n    readonly sourceSessionId: SessionId;\n    readonly signal: AbortSignal;\n    claimConversation(id: SessionId): Promise<void>;\n}',
+  },
+  {
+    name: 'FlowPending',
+    declaration: 'export interface FlowPending {\n    readonly id: string;\n    readonly nodeId: string;\n    readonly request: JsonValue;\n    readonly schema: JsonSchemaNode;\n}',
+  },
+  {
+    name: 'FlowRef',
+    declaration: 'export interface FlowRef {\n    readonly id: string;\n    readonly version: string;\n}',
+  },
+  {
+    name: 'FlowStart',
+    declaration: 'export interface FlowStart {\n    readonly definition: FlowRef;\n    readonly inputs: JsonValue;\n    readonly actor: FlowActor;\n    readonly context: string;\n    readonly requestId: string;\n    readonly deferred?: boolean;\n    readonly parentExecutionId?: FlowExecutionId;\n    readonly parentRevision?: number;\n}',
+  },
+  {
+    name: 'FlowStatus',
+    declaration: 'export type FlowStatus = \'running\' | \'waiting\' | \'paused\' | \'needs-resume\' | \'needs-reconcile\' | \'succeeded\' | \'failed\' | \'cancelled\';',
+  },
+  {
+    name: 'FlowSubflowNode',
+    declaration: 'export interface FlowSubflowNode extends FlowNodeBase {\n    readonly kind: \'flow\';\n    readonly flow: FlowRef;\n    readonly inputs: FlowValue;\n}',
+  },
+  {
+    name: 'FlowSummary',
+    declaration: 'export interface FlowSummary {\n    readonly id: FlowExecutionId;\n    readonly revision: number;\n    readonly title: string;\n    readonly status: FlowStatus;\n    readonly sourceSessionId: SessionId;\n    readonly conversations: readonly SessionId[];\n    readonly completedNodes: number;\n    readonly allowed_actions: readonly FlowControl[];\n    readonly error?: string;\n    readonly pending?: {\n        readonly id: string;\n        readonly request: JsonValue;\n    };\n    readonly result?: JsonValue;\n}',
+  },
+  {
+    name: 'FlowValue',
+    declaration: 'export type FlowValue = JsonValue;',
+  },
+  {
+    name: 'FlowView',
+    declaration: 'export interface FlowView extends FlowExecution {\n    readonly allowed_actions: readonly FlowControl[];\n}',
+  },
+  {
+    name: 'FlowWaitNode',
+    declaration: 'export interface FlowWaitNode extends FlowNodeBase {\n    readonly kind: \'wait\';\n    readonly request: FlowValue;\n    readonly outputSchema: JsonSchemaNode;\n}',
   },
   {
     name: 'FsDirEntry',
@@ -6332,7 +6655,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'ToolRuntime',
-    declaration: 'export class ToolRuntime extends Service {\n    static inject;\n    static Config: z<Config>;\n    readonly [TOOL_RUNTIME_SCHEDULER]: ToolRuntimeScheduler;\n    constructor(ctx: Context, config: Config = {});\n    presentAs(mode: ToolPresentationMode): () => void;\n    register(definition: ToolDefinition): () => void;\n    restrict(filter: ToolRestriction): () => void;\n    guard(guard: ToolGuard): () => void;\n    get(name: string, scope?: ScopeKey): ToolDefinition | undefined;\n    schemas(scope?: ScopeKey): ToolSchema[];\n    executionMode(exec: ToolExecutionInput): ToolExecutionMode;\n    async execute(exec: ToolExecutionInput): Promise<ToolExecutionResult>;\n}',
+    declaration: 'export class ToolRuntime extends Service {\n    static inject;\n    static Config: z<Config>;\n    readonly [TOOL_RUNTIME_SCHEDULER]: ToolRuntimeScheduler;\n    constructor(ctx: Context, config: Config = {});\n    modeFor(scope?: ScopeKey): ToolPresentationMode;\n    presentAs(mode: ToolPresentationMode): () => void;\n    register(definition: ToolDefinition): () => void;\n    restrict(filter: ToolRestriction): () => void;\n    guard(guard: ToolGuard): () => void;\n    get(name: string, scope?: ScopeKey): ToolDefinition | undefined;\n    schemas(scope?: ScopeKey): ToolSchema[];\n    executionMode(exec: ToolExecutionInput): ToolExecutionMode;\n    async execute(exec: ToolExecutionInput): Promise<ToolExecutionResult>;\n}',
   },
   {
     name: 'ToolRuntimeScheduler',

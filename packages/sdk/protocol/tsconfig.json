@@ -22,6 +22,12 @@
     },
     {
       "path": "../../subagent/subagent"
+    },
+    {
+      "path": "../../workflow/flow"
+    },
+    {
+      "path": "../../util/values"
     }
   ]
 }

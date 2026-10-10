@@ -1,0 +1,49 @@
+{
+  "id": "example.count_text",
+  "version": "1.0.0",
+  "description": "Count nonempty lines and whitespace-separated words.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "lines": {
+        "type": "integer"
+      },
+      "words": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "lines",
+      "words"
+    ],
+    "additionalProperties": false
+  },
+  "nodes": [
+    {
+      "id": "count",
+      "kind": "call",
+      "operation": {
+        "id": "example.count",
+        "version": "1.0.0"
+      },
+      "inputs": {
+        "$ref": "inputs"
+      }
+    }
+  ],
+  "outputs": {
+    "$ref": "nodes.count"
+  }
+}

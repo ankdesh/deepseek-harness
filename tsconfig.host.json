@@ -144,6 +144,16 @@
     "scripts/client-bundle-purity.spec.ts"
   ],
   "references": [
+    { "path": "./packages/workflow/tool-flow" },
+
+    { "path": "./packages/workflow/flow-model-native" },
+
+    { "path": "./packages/workflow/flow-yaml" },
+
+    { "path": "./packages/workflow/flow-runtime" },
+
+    { "path": "./packages/workflow/flow" },
+
     { "path": "./packages/workflow/event-system-http" },
     { "path": "./packages/workflow/event-system-yaml" },
     { "path": "./packages/workflow/event-system" },

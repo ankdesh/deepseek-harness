@@ -200,6 +200,10 @@ const packageFileExtras: Readonly<Record<string, readonly string[]>> = {
   // The headless entry and its startup row share the JSON projection code
   // through a hashed tsdown chunk; both import it by relative path.
   '@deepseek-ai/dsh-headless': ['lib/json-stream-*.js'],
+  // The domain-neutral example is a public plugin with pinned YAML resources.
+  '@deepseek-ai/dsh-flow-yaml': ['lib/example.js', 'examples'],
+  // The event invariant and runtime share the durable ledger bundle.
+  '@deepseek-ai/dsh-event-system': ['lib/ledger-*.js'],
 }
 
 function sameStringList(actual: readonly string[] | undefined, expected: readonly string[]): boolean {

@@ -834,6 +834,41 @@ export interface Config {
 
 Source: [`packages/context/file-reference-local/src/index.ts:34`](../packages/context/file-reference-local/src/index.ts)
 
+<a id="deepseek-aidsh-flow-runtime"></a>
+
+## `@deepseek-ai/dsh-flow-runtime`
+
+Requires: `storage` · `storageDomain`
+
+```ts config-catalog
+/** Explicit deployment limits. */
+export interface Config extends FlowLimits {}
+```
+
+Depends on: [`FlowLimits`](../packages/workflow/flow/src/index.ts)
+
+Source: [`packages/workflow/flow-runtime/src/index.ts:46`](../packages/workflow/flow-runtime/src/index.ts)
+
+<a id="deepseek-aidsh-flow-yaml"></a>
+
+## `@deepseek-ai/dsh-flow-yaml`
+
+Requires: `flows`
+
+```ts config-catalog
+/** Explicit trusted roots and whole-file bounds. */
+export interface Config {
+  /** Trusted definition files or catalog directories. */
+  roots: string[]
+  /** Maximum bytes in each definition file. */
+  maxFileBytes: number
+  /** Maximum bytes in each referenced instruction file. */
+  maxInstructionBytes: number
+}
+```
+
+Source: [`packages/workflow/flow-yaml/src/index.ts:10`](../packages/workflow/flow-yaml/src/index.ts)
+
 <a id="deepseek-aidsh-fs-local"></a>
 
 ## `@deepseek-ai/dsh-fs-local`
@@ -2926,6 +2961,22 @@ export interface Config {
 
 Source: [`packages/shell/tool-bash-persistent/src/index.ts:435`](../packages/shell/tool-bash-persistent/src/index.ts)
 
+<a id="deepseek-aidsh-tool-flow"></a>
+
+## `@deepseek-ai/dsh-tool-flow`
+
+Requires: `flows` · `agents`
+
+```ts config-catalog
+/** Generic profiles use an explicit context; product integrations register scoped tools directly. */
+export interface Config {
+  /** Host-selected publication context for this deployment. */
+  context: string
+}
+```
+
+Source: [`packages/workflow/tool-flow/src/index.ts:118`](../packages/workflow/tool-flow/src/index.ts)
+
 <a id="deepseek-aidsh-tool-fs"></a>
 
 ## `@deepseek-ai/dsh-tool-fs`
@@ -3639,6 +3690,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-deliverables` — requires `systemPrompt` · `connection` · `sessionQuery` · `sessionController` · `workspaceFiles` · `fs` · `sandboxPolicy` ([`packages/client/ui-deliverables/src/index.ts`](../packages/client/ui-deliverables/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-directory-picker-browse` ([`packages/client/ui-directory-picker-browse/src/index.ts`](../packages/client/ui-directory-picker-browse/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-directory-picker-native` ([`packages/client/ui-directory-picker-native/src/index.ts`](../packages/client/ui-directory-picker-native/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-flow` ([`packages/client/ui-flow/src/index.ts`](../packages/client/ui-flow/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-goal` ([`packages/client/ui-goal/src/index.ts`](../packages/client/ui-goal/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-input-trigger` ([`packages/client/ui-input-trigger/src/index.ts`](../packages/client/ui-input-trigger/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-jobs` ([`packages/client/ui-jobs/src/index.ts`](../packages/client/ui-jobs/src/index.ts))
@@ -3679,9 +3731,11 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-computer-use` ([`packages/computer-use/computer-use/src/index.ts`](../packages/computer-use/computer-use/src/index.ts))
 - `@deepseek-ai/dsh-cordis-client-runner` ([`packages/extensions/cordis-client-runner/src/index.ts`](../packages/extensions/cordis-client-runner/src/index.ts))
 - `@deepseek-ai/dsh-deepseek-llm-api-extensions` ([`packages/llm/deepseek-llm-api-extensions/src/index.ts`](../packages/llm/deepseek-llm-api-extensions/src/index.ts))
+- `@deepseek-ai/dsh-event-system` — requires `agents` · `sessionPersistence` · `storageDomain` · `tokenMeter` ([`packages/workflow/event-system/src/index.ts`](../packages/workflow/event-system/src/index.ts))
 - `@deepseek-ai/dsh-experimental-auto-review` — requires `llm` · `permissionPresets` · `sessions` · `tools` ([`packages/experimental/auto-review/src/index.ts`](../packages/experimental/auto-review/src/index.ts))
 - `@deepseek-ai/dsh-experimental-client-ui-agent-team` ([`packages/experimental/client-ui-agent-team/src/index.ts`](../packages/experimental/client-ui-agent-team/src/index.ts))
 - `@deepseek-ai/dsh-experimental-computer-use-cua-driver-native` — requires `computerUse` · `tools` · `systemPrompt` ([`packages/experimental/computer-use-cua-driver-native/src/index.ts`](../packages/experimental/computer-use-cua-driver-native/src/index.ts))
+- `@deepseek-ai/dsh-flow-model-native` — requires `flows` · `agents` · `sessions` · `sessionPersistence` · `systemPrompt` · `tools` ([`packages/workflow/flow-model-native/src/index.ts`](../packages/workflow/flow-model-native/src/index.ts))
 - `@deepseek-ai/dsh-fs-observation-policy` ([`packages/fs/fs-observation-policy/src/index.ts`](../packages/fs/fs-observation-policy/src/index.ts))
 - `@deepseek-ai/dsh-fs-ssh` — requires `ssh` · `sandboxPolicy` ([`packages/ssh/fs-ssh/src/index.ts`](../packages/ssh/fs-ssh/src/index.ts))
 - `@deepseek-ai/dsh-goal-round-driver` — requires `agents` · `goals` · `sessions` ([`packages/goal/goal-round-driver/src/index.ts`](../packages/goal/goal-round-driver/src/index.ts))
@@ -3723,6 +3777,7 @@ Abstract service classes — a deployment loads a concrete implementation packag
 - `@deepseek-ai/dsh-compaction` — abstract `CompactionEngine` ([`packages/compaction/compaction/src/index.ts`](../packages/compaction/compaction/src/index.ts))
 - `@deepseek-ai/dsh-credentials` — abstract `CredentialProvider` ([`packages/credentials/credentials/src/index.ts`](../packages/credentials/credentials/src/index.ts))
 - `@deepseek-ai/dsh-file-reference` — abstract `FileReferenceService` ([`packages/context/file-reference/src/index.ts`](../packages/context/file-reference/src/index.ts))
+- `@deepseek-ai/dsh-flow` — abstract `FlowRuntime` ([`packages/workflow/flow/src/index.ts`](../packages/workflow/flow/src/index.ts))
 - `@deepseek-ai/dsh-fs` — abstract `FileSystem` ([`packages/fs/fs/src/index.ts`](../packages/fs/fs/src/index.ts))
 - `@deepseek-ai/dsh-host-directory-picker` — abstract `DirectoryPicker` ([`packages/host/directory-picker/src/index.ts`](../packages/host/directory-picker/src/index.ts))
 - `@deepseek-ai/dsh-jobs` — abstract `JobRegistry` ([`packages/jobs/jobs/src/index.ts`](../packages/jobs/jobs/src/index.ts))

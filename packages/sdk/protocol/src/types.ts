@@ -1,6 +1,6 @@
 /**
- * Named wire types for the DeepSeek Harness SDK runtime protocol: the three
- * request/result pairs and the four server-to-client notification payloads
+ * Named wire types for the DeepSeek Harness SDK runtime protocol: the session and flow
+ * request/result pairs and the server-to-client notification payloads
  * exchanged over the newline-delimited JSON-RPC stdio transport. The server
  * plugin (`@deepseek-ai/dsh-sdk-jsonrpc-server`) and SDK clients share these shapes;
  * `serverInfo.name` stays the wire-stable `deepseek-harness-sdk-runtime`.
@@ -8,6 +8,8 @@
  * @module @deepseek-ai/dsh-sdk-protocol/types
  */
 
+import type { FlowControl, FlowRef, FlowSummary } from '@deepseek-ai/dsh-flow/types'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import type { ContentBlock, ReasoningEffortId } from '@deepseek-ai/dsh-llm'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { SubagentStopReason } from '@deepseek-ai/dsh-subagent'
@@ -107,13 +109,33 @@ export interface SubagentFinishedNotification {
 export interface HarnessSdkNotificationMap {
   'session.event': SessionEventNotification
   'session.status': SessionStatusNotification
+  'flow.progress': SdkFlowProgress
   'subagent.started': SubagentStartedNotification
   'subagent.finished': SubagentFinishedNotification
 }
+
+/** Committed cropped progress for one participating conversation. */
+export interface SdkFlowProgress { sessionId: string; flow: FlowSummary }
+/** Caller-selected participant for flow reads and commands. */
+export interface SdkFlowSessionParams { sessionId: string }
+/** Start a published flow; acceptance does not imply completion. */
+export interface SdkFlowStartParams extends SdkFlowSessionParams { definition: FlowRef; context: string; inputs: JsonValue; requestId: string }
+/** Exact execution read within a participating conversation. */
+export interface SdkFlowReadParams extends SdkFlowSessionParams { executionId: string }
+/** Revision-checked designer control. */
+export interface SdkFlowControlParams extends SdkFlowReadParams { revision: number; command: FlowControl }
+/** Correlated typed decision with a stable delivery identity. */
+export interface SdkFlowAnswerParams extends SdkFlowReadParams { revision: number; waitId: string; deliveryId: string; value: JsonValue }
 
 /** Client-to-server request methods with their param and result shapes. */
 export interface HarnessSdkRequestMap {
   'initialize': { params: InitializeParams; result: InitializeResult }
   'session/prompt': { params: SessionPromptParams; result: SessionPromptResult }
+  'flow/start': { params: SdkFlowStartParams; result: FlowSummary }
+  'flow/get': { params: SdkFlowReadParams; result: FlowSummary }
+  'flow/list': { params: SdkFlowSessionParams; result: FlowSummary[] }
+  'flow/control': { params: SdkFlowControlParams; result: FlowSummary }
+  'flow/answer': { params: SdkFlowAnswerParams; result: FlowSummary }
+  'flow/trace': { params: SdkFlowReadParams; result: JsonValue }
   'shutdown': { params: undefined; result: Record<string, never> }
 }

@@ -119,6 +119,8 @@ const price = ctx.tokenMeter.estimateMessage(message)
 
 -----
 
+`./request-accounting` 子路径提供有界执行器使用的纯预留与结算助手。`reserveRequestTokens()` 合并已记录的请求内容与显式输出额度。`reportedRequestTokens()` 接受安全且不重叠的提供方计数，缺少或无效用量时不返回计数。`settleRequestTokens()` 在缺少已报告用量时保留预留值。流程与 Event System 共用这些规则，工作转到另一对话时不会重置额度。
+
 <a id="model-experience"></a>
 ## 模型体验
 

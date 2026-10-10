@@ -1,0 +1,143 @@
+{
+  "id": "example.analyze_text",
+  "version": "1.0.0",
+  "description": "Count text and optionally produce a typed summary.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string"
+      },
+      "include_summary": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "text",
+      "include_summary"
+    ],
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "lines": {
+        "type": "integer"
+      },
+      "words": {
+        "type": "integer"
+      },
+      "summary": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "lines",
+      "words",
+      "summary"
+    ],
+    "additionalProperties": false
+  },
+  "publication": {
+    "toolName": "analyze_text",
+    "contexts": [
+      "example"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "statistics",
+      "kind": "flow",
+      "flow": {
+        "id": "example.count_text",
+        "version": "1.0.0"
+      },
+      "inputs": {
+        "text": {
+          "$ref": "inputs.text"
+        }
+      }
+    },
+    {
+      "id": "choose",
+      "kind": "branch",
+      "value": {
+        "$ref": "inputs.include_summary"
+      },
+      "equals": true,
+      "then": "interpret",
+      "otherwise": "counts_only"
+    },
+    {
+      "id": "interpret",
+      "kind": "model",
+      "instructionsFile": "summarize.md",
+      "inputs": {
+        "text": {
+          "$ref": "inputs.text"
+        },
+        "statistics": {
+          "$ref": "nodes.statistics"
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "report",
+      "kind": "call",
+      "operation": {
+        "id": "example.report",
+        "version": "1.0.0"
+      },
+      "inputs": {
+        "statistics": {
+          "$ref": "nodes.statistics"
+        },
+        "summary": {
+          "$ref": "nodes.interpret.summary"
+        }
+      },
+      "next": null,
+      "result": {
+        "$ref": "nodes.report"
+      }
+    },
+    {
+      "id": "counts_only",
+      "kind": "call",
+      "operation": {
+        "id": "example.report",
+        "version": "1.0.0"
+      },
+      "inputs": {
+        "statistics": {
+          "$ref": "nodes.statistics"
+        },
+        "summary": null
+      },
+      "next": null,
+      "result": {
+        "$ref": "nodes.counts_only"
+      }
+    }
+  ],
+  "outputs": {}
+}

@@ -498,6 +498,14 @@ Tool registry and execution pipeline. Scoped registrations shadow globals; one v
 
 ```ts cordis-catalog
 /**
+ * The presentation one scope's agent sees: its own declaration, else the
+ * deployment default.
+ * @param scope - the calling agent, or undefined for the global view.
+ * @returns the resolved presentation mode.
+ */
+modeFor(scope?: ScopeKey): ToolPresentationMode
+
+/**
  * Present the calling scope's tools in `mode` instead of the deployment
  * default. Nearest scope on the chain wins, so a preset's standing
  * declaration covers every agent joined under it.

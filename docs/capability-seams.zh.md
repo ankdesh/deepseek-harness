@@ -9,6 +9,17 @@
 
 ```mermaid
 flowchart LR
+  pkg_flow["flow"]
+  svc_flows["ctx.flows<br/>Reusable flow execution"]
+  pkg_flow_runtime["flow-runtime"]
+  pkg_flow_yaml["flow-yaml"]
+  pkg_flow_model_native["flow-model-native"]
+  pkg_tool_flow["tool-flow"]
+  pkg_sdk_jsonrpc_server["sdk-jsonrpc-server"]
+  svc_flowYaml["ctx.flowYaml<br/>Developer flow definitions"]
+  svc_flowController["ctx.flowController<br/>Remote flow controls"]
+  pkg_client_ui_flow["client-ui-flow"]
+  pkg_api_remotes["api-remotes"]
   pkg_mcp_resources["mcp-resources"]
   svc_mcpResources["ctx.mcpResources<br/>Scoped MCP resource access"]
   pkg_mcp_client["mcp-client"]
@@ -283,6 +294,10 @@ flowchart LR
   pkg_experimental_ptc_runtime_python --> svc_ptcRuntime
   pkg_file_reference --> svc_fileReferences
   pkg_file_reference_local --> svc_fileReferences
+  pkg_flow --> svc_flows
+  pkg_flow_runtime --> svc_flowController
+  pkg_flow_runtime --> svc_flows
+  pkg_flow_yaml --> svc_flowYaml
   pkg_fs --> svc_fs
   pkg_fs_local --> svc_fs
   pkg_fs_sandbox --> svc_fs
@@ -404,6 +419,13 @@ flowchart LR
   svc_dynamicCordisRunner --> pkg_tool_cordis
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
+  svc_flowController --> pkg_api_remotes
+  svc_flowController --> pkg_client_ui_flow
+  svc_flowYaml --> pkg_tool_flow
+  svc_flows --> pkg_flow_model_native
+  svc_flows --> pkg_flow_yaml
+  svc_flows --> pkg_sdk_jsonrpc_server
+  svc_flows --> pkg_tool_flow
   svc_fs --> pkg_tool_fs
   svc_invariants --> pkg_agent
   svc_invariants --> pkg_agent_loop
@@ -510,6 +532,9 @@ flowchart LR
 
 | ctx 键 | 角色 | 所属包 | 实现 | 直接消费方 | 配套插件 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.flows` | `seam` | [`flow`](../packages/workflow/flow) | [`flow-runtime`](../packages/workflow/flow-runtime) | [`flow-yaml`](../packages/workflow/flow-yaml), [`flow-model-native`](../packages/workflow/flow-model-native), [`tool-flow`](../packages/workflow/tool-flow), [`sdk-jsonrpc-server`](../packages/sdk/server) | - | 开发者定义固定确定性操作、类型化模型阶段、等待点和共享限额。所有调用方都使用带修订检查的命令。 |
+| `ctx.flowYaml` | `core` | [`flow-yaml`](../packages/workflow/flow-yaml) | - | [`tool-flow`](../packages/workflow/tool-flow) | - | 受信任的纯数据 YAML 注册定义并固定其中的指令文本，编译不调用服务或模型。 |
+| `ctx.flowController` | `core` | [`flow-runtime`](../packages/workflow/flow-runtime) | - | [`client-ui-flow`](../packages/client/ui-flow), [`api-remotes`](../packages/api/remotes) | - | 浏览器远程 API 将启动、读取、控制、决策和轨迹检查转发给执行器。 |
 | `ctx.mcpResources` | `seam` | [`mcp-resources`](../packages/mcp/mcp-resources) | [`mcp-client`](../packages/mcp/mcp-client) | [`mcp-resources`](../packages/mcp/mcp-resources) | - | 连接所有者提供的操作在调用 agent 的作用域内服务于共享资源工具。 |
 | `ctx.browserUse` | `seam` | [`browser-use`](../packages/browser-use/browser-use) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | - | 每个服务实例注册一个提供方拥有的名称。提供方按实时 Session 拥有自己的工具与浏览器资源；共享服务不提供浏览器操作 API。 |
 | `ctx.computerUse` | `seam` | [`computer-use`](../packages/computer-use/computer-use) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | - | 每个服务实例只注册一个提供方自定的名称。各提供方也拥有自己的模型工具；服务不提供通用操作 API、运行时选择或 Session 流程锁。 |

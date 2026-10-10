@@ -27,6 +27,8 @@ Use `ctx.tokenMeter` to estimate a session's current request and context pressur
 
 Mount this plugin when a consumer needs token or context pressure for compaction decisions, occupancy displays, or telemetry. The estimator has no settings and adds no model-visible surface; model capacity belongs to the adapter that owns the exact provider/model route and is available through `ctx.llm.resolveModelInfo().context`.
 
+The `./request-accounting` subpath exposes pure reservation and settlement helpers for bounded executors. `reserveRequestTokens()` combines the logged envelope with the explicit output allowance. `reportedRequestTokens()` accepts safe disjoint provider counts and returns no count for missing or invalid usage. `settleRequestTokens()` retains the reservation when reported usage is absent. Flows and the Event System use these same rules without resetting an allowance when work changes conversation.
+
 ### When to choose it
 
 Choose it when several plugins should agree on one replay-based measurement — compaction planning, occupancy UIs, and pressure checks all read the same fold. The measurements replay the durable session log, so they are deterministic, cost no model calls, and reflect exactly what is logged. Text and undeclared image routes use a fixed heuristic; reach for a provider tokenizer when a deployment needs exact billing-grade counts.

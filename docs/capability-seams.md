@@ -7,6 +7,17 @@ A service can be a core spine service, a swappable capability seam, or a bundle/
 
 ```mermaid
 flowchart LR
+  pkg_flow["flow"]
+  svc_flows["ctx.flows<br/>Reusable flow execution"]
+  pkg_flow_runtime["flow-runtime"]
+  pkg_flow_yaml["flow-yaml"]
+  pkg_flow_model_native["flow-model-native"]
+  pkg_tool_flow["tool-flow"]
+  pkg_sdk_jsonrpc_server["sdk-jsonrpc-server"]
+  svc_flowYaml["ctx.flowYaml<br/>Developer flow definitions"]
+  svc_flowController["ctx.flowController<br/>Remote flow controls"]
+  pkg_client_ui_flow["client-ui-flow"]
+  pkg_api_remotes["api-remotes"]
   pkg_mcp_resources["mcp-resources"]
   svc_mcpResources["ctx.mcpResources<br/>Scoped MCP resource access"]
   pkg_mcp_client["mcp-client"]
@@ -281,6 +292,10 @@ flowchart LR
   pkg_experimental_ptc_runtime_python --> svc_ptcRuntime
   pkg_file_reference --> svc_fileReferences
   pkg_file_reference_local --> svc_fileReferences
+  pkg_flow --> svc_flows
+  pkg_flow_runtime --> svc_flowController
+  pkg_flow_runtime --> svc_flows
+  pkg_flow_yaml --> svc_flowYaml
   pkg_fs --> svc_fs
   pkg_fs_local --> svc_fs
   pkg_fs_sandbox --> svc_fs
@@ -402,6 +417,13 @@ flowchart LR
   svc_dynamicCordisRunner --> pkg_tool_cordis
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
+  svc_flowController --> pkg_api_remotes
+  svc_flowController --> pkg_client_ui_flow
+  svc_flowYaml --> pkg_tool_flow
+  svc_flows --> pkg_flow_model_native
+  svc_flows --> pkg_flow_yaml
+  svc_flows --> pkg_sdk_jsonrpc_server
+  svc_flows --> pkg_tool_flow
   svc_fs --> pkg_tool_fs
   svc_invariants --> pkg_agent
   svc_invariants --> pkg_agent_loop
@@ -508,6 +530,9 @@ flowchart LR
 
 | ctx key | Role | Owner | Implementations | Direct consumers | Companion plugins | Note |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.flows` | `seam` | [`flow`](../packages/workflow/flow) | [`flow-runtime`](../packages/workflow/flow-runtime) | [`flow-yaml`](../packages/workflow/flow-yaml), [`flow-model-native`](../packages/workflow/flow-model-native), [`tool-flow`](../packages/workflow/tool-flow), [`sdk-jsonrpc-server`](../packages/sdk/server) | - | Developer definitions pin deterministic operations, typed model phases, waits and shared limits. All consumers use named revision-checked commands. |
+| `ctx.flowYaml` | `core` | [`flow-yaml`](../packages/workflow/flow-yaml) | - | [`tool-flow`](../packages/workflow/tool-flow) | - | Trusted data-only YAML registers definitions and pins contained instruction text without service or model effects. |
+| `ctx.flowController` | `core` | [`flow-runtime`](../packages/workflow/flow-runtime) | - | [`client-ui-flow`](../packages/client/ui-flow), [`api-remotes`](../packages/api/remotes) | - | The browser remote API forwards start, read, control, decisions and trace inspection to the executor. |
 | `ctx.mcpResources` | `seam` | [`mcp-resources`](../packages/mcp/mcp-resources) | [`mcp-client`](../packages/mcp/mcp-client) | [`mcp-resources`](../packages/mcp/mcp-resources) | - | Connection-owned providers serve shared resource tools in the calling agent scope. |
 | `ctx.browserUse` | `seam` | [`browser-use`](../packages/browser-use/browser-use) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | - | One provider-owned name per service instance. Providers own their tools and browser resources per live Session; the shared service has no browser operation API. |
 | `ctx.computerUse` | `seam` | [`computer-use`](../packages/computer-use/computer-use) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | - | One provider-owned name per service instance. Each provider also owns its model tools; the service has no common action API, runtime selection, or Session workflow lock. |
