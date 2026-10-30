@@ -1,4 +1,5 @@
 packages:
+  - tools/*
   - vendor/*
   - packages/*/*
   # The Landlock launcher is developed with its harness consumers but keeps

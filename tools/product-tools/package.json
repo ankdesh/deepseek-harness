@@ -1,0 +1,24 @@
+{
+  "name": "@deepseek-ai/dsh-product-tools",
+  "version": "0.1.6-alpha.1",
+  "type": "module",
+  "description": "Prepare and assemble products from installed Harness packages",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "profile.js",
+    "README.md",
+    "index.d.ts"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": "^22.19.0 || >=24.2.0"
+  },
+  "types": "./index.d.ts"
+}

@@ -1,0 +1,131 @@
+name: Private product packages
+on:
+  workflow_dispatch:
+    inputs:
+      consumer_ref:
+        description: Exact spec2gds commit to verify (40 hex characters)
+        required: true
+        type: string
+      suffix:
+        description: Unique package prerelease suffix
+        default: ankdesh.1
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: private-package-release
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/TEMP_consumer/TEMP_playwright
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate inputs
+        env:
+          CONSUMER_REF: ${{ inputs.consumer_ref }}
+          RELEASE_SUFFIX: ${{ inputs.suffix }}
+        run: |
+          [[ "$CONSUMER_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$RELEASE_SUFFIX" =~ ^ankdesh\.[0-9]+$ ]]
+      - uses: actions/checkout@v6
+        with:
+          repository: ankdesh/spec2gds
+          ref: ${{ inputs.consumer_ref }}
+          path: TEMP_consumer
+          token: ${{ secrets.CONSUMER_READ_TOKEN || github.token }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:native-system
+      - run: pnpm run build:official
+      - name: Check package tooling and web startup
+        env:
+          TMPDIR: ${{ github.workspace }}/TEMP_runtime
+        run: |
+          mkdir -p "$TMPDIR"
+          node --test scripts/product-profile.test.mjs tools/product-tools/tests/*.test.mjs scripts/package-release/tests/*.test.mjs
+          pnpm exec vitest run packages/bundle/web-app/tests
+      - name: Pack candidate bytes
+        env:
+          RELEASE_SUFFIX: ${{ inputs.suffix }}
+        run: node scripts/package-release/pack.mjs --product TEMP_consumer/ai-assistant --out TEMP_release --suffix "$RELEASE_SUFFIX"
+      - name: Build consumer against candidate packages
+        run: node scripts/package-release/verify.mjs --from TEMP_release --product TEMP_consumer/ai-assistant --out TEMP_development --development
+      - name: Verify clean profile installs
+        run: node scripts/package-release/verify.mjs --from TEMP_release --product TEMP_development/development --out TEMP_verification
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Prepare consumer test tools
+        working-directory: TEMP_consumer
+        run: |
+          python -m pip install uv
+          uv sync --frozen
+          npm --prefix circuit-designer ci --no-audit --no-fund
+          npm --prefix tests/ui-scenarios ci --no-audit --no-fund
+          tests/ui-scenarios/node_modules/.bin/playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y verilator
+      - name: Run required consumer acceptance profiles
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4o-mini' }}
+        run: node scripts/package-release/acceptance.mjs --consumer TEMP_consumer --development TEMP_development --verification TEMP_verification
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tested-packages
+          path: |
+            TEMP_release/packages
+            TEMP_release/release-manifest.json
+            TEMP_release/release-manifest.sha256
+            TEMP_verification/verification.json
+            TEMP_verification/*.log
+            TEMP_verification/spec2gds-*/package.json
+            TEMP_verification/spec2gds-*/package-lock.json
+            TEMP_verification/spec2gds-*/installed-packages.json
+            TEMP_verification/spec2gds-*/measurements.json
+            TEMP_verification/development
+            TEMP_verification/application-*
+          include-hidden-files: true
+          if-no-files-found: error
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    environment: package-release
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: https://npm.pkg.github.com
+          scope: '@ankdesh'
+      - uses: actions/download-artifact@v4
+        with:
+          name: tested-packages
+          path: TEMP_tested
+      - name: Publish tested bytes
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/package-release/publish.mjs --from TEMP_tested/TEMP_release --verification TEMP_tested/TEMP_verification
+      - name: Promote the complete release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release_id=$(node -p 'JSON.parse(require("fs").readFileSync("TEMP_tested/TEMP_release/promotion.json")).releaseId')
+          tar -czf TEMP_tested/TEMP_release/consumer-verification.tgz -C TEMP_tested/TEMP_release consumer-verification
+          gh release create "harness-v$release_id" --target "$GITHUB_SHA" --title "Harness $release_id" --notes "Verified npm packages for selected product profiles." TEMP_tested/TEMP_release/release-manifest.json TEMP_tested/TEMP_release/release-manifest.sha256 TEMP_tested/TEMP_release/promotion.json TEMP_tested/TEMP_release/consumer-verification.tgz
