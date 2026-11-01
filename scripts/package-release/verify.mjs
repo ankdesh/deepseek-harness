@@ -66,7 +66,7 @@ try {
     for(const filename of ['package.json','package-lock.json'])cpSync(join(product,filename),join(output,'development',filename));
     for(const [name,profile]of Object.entries(recipe.profiles)) {
       const directory=join(output,name);mkdirSync(directory);
-      const dependencies={'@ankdesh/dsh':release.releaseId,'@ankdesh/dsh-product-tools':release.releaseId};
+      const dependencies={'@ankdesh/dsh':release.releaseId,'@ankdesh/ankdesh-product-tools':release.releaseId};
       for(const local of profile.localBundles) {
         const bundle=resolve(product,local),manifest=JSON.parse(readFileSync(join(bundle,'package.json'),'utf8'));
         const text=await run('npm',['pack','--workspaces=false','--ignore-scripts','--json','--pack-destination',directory],bundle,name+'-pack-'+manifest.name.split('/').at(-1));
@@ -85,7 +85,7 @@ try {
       await run('npm',['install','--omit=dev','--ignore-scripts','--no-audit','--no-fund'],directory,name+'-install');
       cpSync(join(source,'release-manifest.json'),join(directory,'release-manifest.json'));
       const probe=`
-        import {prepareProductProfile,packageDirectory,installedGraph} from '@ankdesh/dsh-product-tools';
+        import {prepareProductProfile,packageDirectory,installedGraph} from '@ankdesh/ankdesh-product-tools';
         import {measureInstallation} from ${JSON.stringify(pathToFileURL(join(import.meta.dirname,'measure.mjs')).href)};
         import {resolve} from 'node:path';import{writeFileSync}from'node:fs';
         const bundles=${JSON.stringify(profile.bundles)};
@@ -93,7 +93,7 @@ try {
         const graph=installedGraph(Object.keys(${JSON.stringify(dependencies)}),process.cwd());
         const measurement=measureInstallation(process.cwd(),${JSON.stringify(env.npm_config_cache)});
         const names=measurement.packages.map(n=>n.name);
-        if(${JSON.stringify(name)}.endsWith('headless')&&names.some(n=>/dsh-client|dsh-web-frontend|dsh-web-runtime/.test(n)))throw new Error('Headless install has browser packages');
+        if(${JSON.stringify(name)}.endsWith('headless')&&names.some(n=>/dsh-client|dsh-web-frontend|ankdesh-web-runtime/.test(n)))throw new Error('Headless install has browser packages');
         const cordis=[...graph.values()].filter(n=>n.manifest.name==='@ankdesh/cordis');if(cordis.length!==1)throw new Error('Expected one Cordis instance');
         writeFileSync('installed-packages.json',JSON.stringify([...graph.values()].map(n=>({name:n.manifest.name,version:n.manifest.version})),null,2));
         writeFileSync('measurements.json',JSON.stringify(measurement,null,2));
@@ -119,10 +119,10 @@ try {
       await run(process.execPath,['probe.mjs'],directory,name+'-locked-graph');
       await run(process.execPath,[join(directory,'node_modules/@ankdesh/dsh/lib/bin.js'),'--profile',name,'--dump-config'],directory,name+'-locked-config');
       const assembly=`
-        import {assembleProduct} from '@ankdesh/dsh-product-tools';
+        import {assembleProduct} from '@ankdesh/ankdesh-product-tools';
         import {cpSync,writeFileSync} from 'node:fs';import {resolve} from 'node:path';
         const output=resolve('assembled');
-        assembleProduct({from:process.cwd(),output,roots:${JSON.stringify(['@ankdesh/dsh','@ankdesh/dsh-product-tools',...profile.bundles])},releaseManifest:resolve('release-manifest.json'),releaseManifestSha256:${JSON.stringify(releaseManifestSha256)}});
+        assembleProduct({from:process.cwd(),output,roots:${JSON.stringify(['@ankdesh/dsh','@ankdesh/ankdesh-product-tools',...profile.bundles])},releaseManifest:resolve('release-manifest.json'),releaseManifestSha256:${JSON.stringify(releaseManifestSha256)}});
         cpSync(${JSON.stringify(join(product,'deployment'))},resolve(output,'deployment'),{recursive:true});
         writeFileSync(resolve(output,'harness.product.json'),JSON.stringify({defaultProfile:${JSON.stringify(name)},profiles:{[${JSON.stringify(name)}]:${JSON.stringify(profile)}}}));
       `;
@@ -131,7 +131,7 @@ try {
       env.ASSISTANT_STATE=join(directory,'.assembly-state');
       env.ASSISTANT_PROFILE=name;
       await run(process.execPath,[join(directory,'assembled/deployment/launch.mjs'),'--dump-config'],directory,name+'-assembled-config');
-      if(release.profiles[name].packages.includes('@ankdesh/dsh-web-runtime'))await run(process.execPath,[join(import.meta.dirname,'web-smoke.mjs'),join(directory,'assembled')],directory,name+'-web-start');
+      if(release.profiles[name].packages.includes('@ankdesh/ankdesh-web-runtime'))await run(process.execPath,[join(import.meta.dirname,'web-smoke.mjs'),join(directory,'assembled')],directory,name+'-web-start');
       delete env.ASSISTANT_STATE;delete env.ASSISTANT_PROFILE;
     }
   }

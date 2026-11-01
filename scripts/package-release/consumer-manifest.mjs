@@ -28,7 +28,7 @@ export function productRoots(manifests,versions){
     if(roots[name]&&roots[name]!==version)throw new Error(`Conflicting product dependency declarations for ${name}. Use compatible registry roots.`);
     roots[name]=version;
   };
-  for(const name of ['@ankdesh/dsh','@ankdesh/dsh-product-tools'])add(name,versions.get(name));
+  for(const name of ['@ankdesh/dsh','@ankdesh/ankdesh-product-tools'])add(name,versions.get(name));
   for(const manifest of manifests)for(const [name,version]of Object.entries(manifest.dependencies||{}))add(name,version);
   return Object.fromEntries(Object.entries(roots).sort(([a],[b])=>a.localeCompare(b)));
 }

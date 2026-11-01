@@ -17,7 +17,7 @@ const evidence=JSON.parse(evidenceBytes);
 if(evidence.registryMode!=='live-candidate')throw new Error('Publication requires live candidate registry verification.');
 if(evidence.releaseManifestSha256!==hash(readFileSync(join(directory,'release-manifest.json')))||evidence.releaseId!==manifest.releaseId||!evidence.records.length||evidence.records.some(r=>r.code!==0))throw new Error('Consumer verification is incomplete or failed.');
 for(const profile of Object.keys(manifest.profiles))for(const stage of ['install','graph','config','help','lock','ci','locked-graph','locked-config','assembly','assembled-config'])if(!evidence.records.some(r=>r.name===profile+'-'+stage&&r.code===0))throw new Error(`Missing verification: ${profile}-${stage}`);
-for(const [profile,definition]of Object.entries(manifest.profiles))if(definition.packages?.includes('@ankdesh/dsh-web-runtime')&&!evidence.records.some(r=>r.name===profile+'-web-start'&&r.code===0))throw new Error(`Missing verification: ${profile}-web-start`);
+for(const [profile,definition]of Object.entries(manifest.profiles))if(definition.packages?.includes('@ankdesh/ankdesh-web-runtime')&&!evidence.records.some(r=>r.name===profile+'-web-start'&&r.code===0))throw new Error(`Missing verification: ${profile}-web-start`);
 // Publication requires installation, assembly, and application acceptance evidence.
 for(const stage of ['application-fast','application-integration','application-regression'])if(!evidence.records.some(r=>r.name===stage&&r.code===0&&!r.sourceDirty&&r.consumerCommit===manifest.consumerCommit))throw new Error(`Missing consumer acceptance evidence: ${stage}`);
 for(const p of manifest.packages) {

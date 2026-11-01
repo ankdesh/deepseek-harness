@@ -9,16 +9,16 @@ test('missing candidate packages fail before a registry fallback can be used',()
 
 test('production roots retain third-party application dependencies',async()=>{
  const {productRoots}=await import('../consumer-manifest.mjs');
- const versions=new Map([['@ankdesh/dsh','release'],['@ankdesh/dsh-product-tools','release']]);
+ const versions=new Map([['@ankdesh/dsh','release'],['@ankdesh/ankdesh-product-tools','release']]);
  assert.equal(productRoots([{dependencies:{zod:'^4.4.3'}}],versions).zod,'^4.4.3');
 });
 test('conflicting third-party roots require an explicit compatible declaration',async()=>{
  const {productRoots}=await import('../consumer-manifest.mjs');
- const versions=new Map([['@ankdesh/dsh','release'],['@ankdesh/dsh-product-tools','release']]);
+ const versions=new Map([['@ankdesh/dsh','release'],['@ankdesh/ankdesh-product-tools','release']]);
  assert.throws(()=>productRoots([{dependencies:{zod:'^3'}},{dependencies:{zod:'^4'}}],versions),/Conflicting product dependency/);
 });
 test('production roots reject application source links',async()=>{
  const {productRoots}=await import('../consumer-manifest.mjs');
- const versions=new Map([['@ankdesh/dsh','release'],['@ankdesh/dsh-product-tools','release']]);
+ const versions=new Map([['@ankdesh/dsh','release'],['@ankdesh/ankdesh-product-tools','release']]);
  assert.throws(()=>productRoots([{dependencies:{local:'file:../local'}}],versions),/requires a registry release/);
 });

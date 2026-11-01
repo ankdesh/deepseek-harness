@@ -22,8 +22,34 @@ import {fileURLToPath} from 'node:url';
 let root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const json = path => JSON.parse(readFileSync(path, 'utf8'));
 const digest = (bytes, algorithm='sha256') => createHash(algorithm).update(bytes).digest(algorithm==='sha512'?'base64':'hex');
-const rescope = text => text.replaceAll('@deepseek-ai/', '@ankdesh/');
-const sourceName = name => name.replace('@ankdesh/', '@deepseek-ai/');
+const CUSTOM_AGENTIC_SUFFIXES = [
+  'event-system-http',
+  'event-system-yaml',
+  'event-system',
+  'flow-model-native',
+  'flow-runtime',
+  'flow-yaml',
+  'flow',
+  'prompt-catalog-yaml',
+  'prompt-catalog',
+  'tool-flow',
+  'product-tools',
+  'web-runtime',
+];
+function rescope(text) {
+  let result = text;
+  for (const s of CUSTOM_AGENTIC_SUFFIXES) {
+    result = result.replaceAll(`@deepseek-ai/dsh-${s}`, `@ankdesh/ankdesh-${s}`);
+    result = result.replaceAll(`@ankdesh/dsh-${s}`, `@ankdesh/ankdesh-${s}`);
+  }
+  return result.replaceAll('@deepseek-ai/', '@ankdesh/');
+}
+function sourceName(name) {
+  for (const s of CUSTOM_AGENTIC_SUFFIXES) {
+    if (name === `@ankdesh/ankdesh-${s}`) return `@deepseek-ai/dsh-${s}`;
+  }
+  return name.replace('@ankdesh/', '@deepseek-ai/');
+}
 const packageName = name => name.startsWith('@') ? name.split('/').slice(0,2).join('/') : name.split('/')[0];
 const {values} = parseArgs({options:{product:{type:'string'},out:{type:'string'},suffix:{type:'string',default:'ankdesh.1'},source:{type:'string'},'stock-cli':{type:'boolean',default:false},'allow-dirty':{type:'boolean',default:false}}});
 if (!values.product || !values.out || !/^ankdesh\.\d+$/.test(values.suffix)) throw new Error('Usage: pack.mjs --product PRODUCT --out NEW_DIRECTORY [--suffix ankdesh.N]');
