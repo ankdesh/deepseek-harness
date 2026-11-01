@@ -105,10 +105,13 @@ export function attachStructuredRuntime(childCtx: Context, schema: ObjectJsonSch
   // Terminal WITHIN the step. Guards run after the whole pre-execute
   // waterfall and compose monotonically (deny or abstain, never allow), so a
   // later prepended listener cannot resurrect dispatch. Calls that precede
-  // capture in the same response remain untouched.
+  // capture in the same response remain untouched. Duplicate parallel calls to
+  // the capture tool abstain so that redundant model emissions remain idempotent.
   childCtx.tools.guard(exec => captured === undefined && pending === undefined
     ? undefined
-    : `structured output already recorded: the run is complete, so \`${exec.name}\` is not executed`)
+    : exec.name === STRUCTURED_OUTPUT_TOOL
+      ? undefined
+      : `structured output already recorded: the run is complete, so \`${exec.name}\` is not executed`)
 
   // The capture COMMIT observes the immutable, authoritative result after the
   // complete pipeline and outer error normalization. This notification cannot
