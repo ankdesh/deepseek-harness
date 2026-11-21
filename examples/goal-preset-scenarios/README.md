@@ -1,5 +1,7 @@
 # DeepSeek Harness: Goal Preset Tutorial & Test Scenarios
 
+English | [中文](README.zh.md)
+
 This directory contains standalone, non-spec2gds scenarios designed to help understand and verify the **`goal` preset** in DeepSeek Harness (`dsh`).
 
 ---

@@ -2,6 +2,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, it } from 'vitest'
 import type { SubprocessSpawnSpec } from '@deepseek-ai/dsh-subprocess'
 import { targetEnvironment } from '../src/runner-launch.ts'
@@ -28,12 +29,13 @@ function spec(argv: string[], graceMs = 100, env?: NodeJS.ProcessEnv): Subproces
 async function waitForPid(path: string): Promise<number> {
   const deadline = Date.now() + 5_000
   while (Date.now() < deadline) {
+    let pid = Number.NaN
     try {
-      const pid = Number(readFileSync(path, 'utf8').trim())
-      if (Number.isSafeInteger(pid) && pid > 0) return pid
-    } catch {
+      pid = Number(readFileSync(path, 'utf8').trim())
+    } catch (_pidFileMissing) {
       // Target has not written its descendant pid yet.
     }
+    if (Number.isSafeInteger(pid) && pid > 0) return pid
     await new Promise(resolve => setTimeout(resolve, 20))
   }
   throw new Error(`pid file ${path} was not written`)
@@ -50,10 +52,6 @@ async function waitGone(pid: number): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 20))
   }
   throw new Error(`pid ${pid} remained alive`)
-}
-
-function cleanup(pid: number): void {
-  spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore' })
 }
 
 type SpawnFailure = NodeJS.ErrnoException & { path?: string }
@@ -84,6 +82,26 @@ function directSpawnFailure(argv: readonly string[], cwd = scratch): Promise<Spa
 const windowsNative = process.platform === 'win32' && probeWindowsJob()
 
 describe.skipIf(!windowsNative)('Windows Job native containment', () => {
+  it('keeps ordinary descendants free of visible console windows', async () => {
+    const fixture = fileURLToPath(new URL('../../win32-process/tests/fixtures/console-state.ts', import.meta.url))
+    const script = `
+      const { spawnSync } = require('node:child_process')
+      const child = spawnSync(process.execPath, [process.argv[1]], { stdio: 'inherit' })
+      if (child.error) throw child.error
+      process.exitCode = child.status ?? 1
+    `
+    const request = spec([process.execPath, '-e', script, fixture])
+    const handle = bindManagedProcess(request, launchWindowsJob(request, targetEnvironment(request)))
+    try {
+      expect(await handle.done).toEqual({ exitCode: 0, signal: null })
+      expect(handle.collected.stderr?.readFrom(0).text).toBe('')
+      expect(JSON.parse(handle.collected.stdout?.readFrom(0).text ?? '')).toMatchObject({ visible: false })
+    } finally {
+      handle.terminate()
+      await handle.waitForExit()
+    }
+  })
+
   it('keeps raw stdin writable while the runner starts the target', async () => {
     const output = join(scratch, `stdin-${Date.now()}.txt`)
     const script = `
@@ -157,7 +175,6 @@ describe.skipIf(!windowsNative)('Windows Job native containment', () => {
       stdio: { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' } as const,
     }
     const handle = bindManagedProcess(request, launchWindowsJob(request, targetEnvironment(request)))
-    let descendant: number | undefined
     try {
       if (handle.stdout === undefined) throw new Error('expected piped stdout')
       if (handle.stderr === undefined) throw new Error('expected piped stderr')
@@ -171,7 +188,7 @@ describe.skipIf(!windowsNative)('Windows Job native containment', () => {
         handle.stderr?.once('end', resolve)
         handle.stderr?.once('error', reject)
       })
-      descendant = await waitForPid(pidFile)
+      const descendant = await waitForPid(pidFile)
       await expect(handle.done).resolves.toEqual({ exitCode: 42, signal: null })
       await expect(Promise.race([
         Promise.all([stdoutEnded, stderrEnded]).then(() => true),
@@ -187,9 +204,9 @@ describe.skipIf(!windowsNative)('Windows Job native containment', () => {
       await expect(handle.waitForExit()).resolves.toBe(true)
       await waitGone(descendant)
     } finally {
+      // The Job owns cleanup; a descendant PID may already identify an unrelated process after exit.
       handle.terminate()
       await Promise.allSettled([handle.done, handle.waitForExit()])
-      if (descendant !== undefined) cleanup(descendant)
       rmSync(targetCwd, { recursive: true, force: true })
     }
   })

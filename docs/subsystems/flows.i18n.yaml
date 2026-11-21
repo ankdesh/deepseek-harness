@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for flows.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/flows.md
-flows.md: 2eb1eeb7f375578f77a50ec15178ee244286903d
-flows.zh.md: febd5f3ecb65615316b6e0ba9c6bd8f962ecd311
+/reusable-flows:
+  en: 66aaa352cc139467
+  zh: e45d4eedefd24ba7
+/reusable-flows/definitions-and-execution:
+  en: 17ee30a3483b9c22
+  zh: 7228fb2e7c8d83f6
+/reusable-flows/authoring:
+  en: 048c702e52c7047c
+  zh: 06260f4704e750e3
+/reusable-flows/persistence-and-controls:
+  en: 8cf04c0e3cd59630
+  zh: bc90b9a9747681cd
+/reusable-flows/model-phases-and-accounting:
+  en: e7279cca01ebd5f7
+  zh: 147205946fb789b1
+/reusable-flows/deployment-example:
+  en: 3bf211ece923983b
+  zh: 47e93c1bb09044a6

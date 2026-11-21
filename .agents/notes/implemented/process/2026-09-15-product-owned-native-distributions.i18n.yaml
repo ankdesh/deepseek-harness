@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-15-product-owned-native-distributions.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-15-product-owned-native-distributions.md
-2026-09-15-product-owned-native-distributions.md: afcb115b230873c231a781ca56311a653528ac8a
-2026-09-15-product-owned-native-distributions.zh.md: d0c24e4bd745e4d9f787a6901125483a299dd394
+/agent-note-product-owned-native-distributions:
+  en: 39b20451abd66704
+  zh: 0bd723aeef6c7a1f
+/agent-note-product-owned-native-distributions/problem:
+  en: b4b8ad601e0637b0
+  zh: 823f789307b7e7ed
+/agent-note-product-owned-native-distributions/decision:
+  en: d7a31f7e277e05fb
+  zh: de116c6cfbdf7952
+/agent-note-product-owned-native-distributions/alternatives-considered:
+  en: a12c07798d0f55d9
+  zh: c95b584029c8c183
+/agent-note-product-owned-native-distributions/consequences:
+  en: c7dfb2b2713be8fd
+  zh: baeaa9fa8d3b5428

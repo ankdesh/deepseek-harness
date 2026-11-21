@@ -26,10 +26,11 @@ import Sessions, { SessionId, SessionSeq } from '@deepseek-ai/dsh-session'
 import Projections from '@deepseek-ai/dsh-session-projection'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import Tools from '@deepseek-ai/dsh-tools'
+import * as NativeTools from '@deepseek-ai/dsh-tool-executor-native'
 import Storage from '@deepseek-ai/dsh-storage'
 import * as StorageSqlite from '@deepseek-ai/dsh-storage-sqlite'
 import * as StorageDomain from '@deepseek-ai/dsh-storage-domain'
-import Persistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as Persistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import Flows, { FlowController } from '../../flow-runtime/src/index.ts'
 import Typert from '@deepseek-ai/dsh-typert-registry'
 import * as Native from '../src/index.ts'
@@ -57,7 +58,7 @@ class Adapter extends LlmAdapter {
   }
   override async *stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
     this.requests.push(options)
-    const phase = options.messages.at(-1)?.source.kind === 'plugin'
+    const phase = options.messages.at(-1)?.source?.kind === 'flow-model-native'
     if (phase && this.block) {
       this.entered?.()
       await new Promise<void>((resolve) => {
@@ -119,6 +120,7 @@ async function boot() {
     ['projections', Projections],
     ['system-prompt', SystemPrompt],
     ['tools', Tools],
+    ['tools-native', NativeTools],
     ['agents', AgentRegistry],
     ['persistence', Persistence],
     ['storage', Storage],
@@ -421,7 +423,7 @@ describe('native flows', () => {
       role: 'user',
       id: MessageId('flow-phase:lost/interpret/1'),
       content: [{ type: 'text', text: 'Old phase' }],
-      source: { kind: 'plugin', plugin: 'flow-model-native', form: 'notice', summary: 'Old phase' },
+      source: { kind: 'flow-model-native', form: 'notice', summary: 'Old phase' },
     })
     const designer = createUserMessage({
       content: [{ type: 'text', text: 'Steering' }],
@@ -447,7 +449,7 @@ describe('native flows', () => {
       await restored.agent.whenIdle()
       expect(adapter.requests).toHaveLength(2)
       for (const request of adapter.requests) {
-        expect(request.messages.at(-1)?.source.kind).toBe('user')
+        expect(request.messages.at(-1)?.source?.kind).toBe('user')
         expect(request.messages.at(-1)?.content).toEqual(designer.content)
       }
       expect(

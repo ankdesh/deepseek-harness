@@ -1,6 +1,37 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/core/prompt-catalog-yaml/README.md
-README.md: b9c3b4d6b4e7f91ea8b61957e23b8c9242f18835
-README.zh.md: 68fd112fd40e012c1f63fa730a2fd37ea81bde85
+/:
+  en: d14dd766ef0f2c19
+  zh: 8f523ecd80d63861
+/deepseek-ai-dsh-prompt-catalog-yaml:
+  en: 683a5469ac8f160f
+  zh: 9e3bfc10eb765159
+/deepseek-ai-dsh-prompt-catalog-yaml/summary:
+  en: 094d1fe236021aa3
+  zh: ce973f9960b679ad
+/deepseek-ai-dsh-prompt-catalog-yaml/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-prompt-catalog-yaml/use-this-package:
+  en: 7ede4b79c3212687
+  zh: 552b3a73bf6f4f55
+/deepseek-ai-dsh-prompt-catalog-yaml/understand-the-implementation:
+  en: 9d93f59033b56fb1
+  zh: 31bf5055ed9b80ab
+/deepseek-ai-dsh-prompt-catalog-yaml/further-exploration:
+  en: 4d069ca256d0056b
+  zh: 222b1acfa67f4538
+/deepseek-ai-dsh-prompt-catalog-yaml/model-experience:
+  en: b12a802be2e21fd6
+  zh: 4fb93fb3efd6a210
+/deepseek-ai-dsh-prompt-catalog-yaml/model-experience/kv-cache-effect:
+  en: 53165014072b279b
+  zh: a682e7176af9e019
+/deepseek-ai-dsh-prompt-catalog-yaml/known-limitations-and-deferred-work:
+  en: 39152768b0ec7deb
+  zh: 60b93ef34e1ae46e
+/deepseek-ai-dsh-prompt-catalog-yaml/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-09-reusable-flows.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-09-reusable-flows.md
-2026-10-09-reusable-flows.md: d11fe1f2b2d68998e45dd22dc847b60fcc9500d2
-2026-10-09-reusable-flows.zh.md: bfd59dc6ee49426e7c355be7537b35abcd26a65e
+/agent-note-reusable-deterministic-flows:
+  en: 4614fdaef5a922d6
+  zh: f91f4ba3f5df5b02
+/agent-note-reusable-deterministic-flows/problem:
+  en: b021399d1ebeee0f
+  zh: 6cc34e955d571d25
+/agent-note-reusable-deterministic-flows/decision:
+  en: 7700a517caf20394
+  zh: d77dbf9dada86cf9
+/agent-note-reusable-deterministic-flows/alternatives-considered:
+  en: 86fec0dbaf118aab
+  zh: ab3f7653ce19d982
+/agent-note-reusable-deterministic-flows/consequences:
+  en: 3e63444ccf8f6557
+  zh: ca5de1726a24679d
+/agent-note-reusable-deterministic-flows/verification:
+  en: 768020bf2023c1b2
+  zh: a08397e2210b19ca

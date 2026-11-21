@@ -1,0 +1,58 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write examples/goal-preset-scenarios/README.md
+/deepseek-harness-goal-preset-tutorial-test-scenarios:
+  en: a6f793c525a7bfd8
+  zh: 77d2210515b49854
+/deepseek-harness-goal-preset-tutorial-test-scenarios/1-what-is-the-goal-preset:
+  en: e48755421e9f3165
+  zh: f8d08f78c3ba5437
+/deepseek-harness-goal-preset-tutorial-test-scenarios/1-what-is-the-goal-preset/key-architectural-concepts:
+  en: 3fd1cb50fd6b8ae4
+  zh: 157f66e0397720f0
+/deepseek-harness-goal-preset-tutorial-test-scenarios/1-what-is-the-goal-preset/goal-lifecycle-state-machine:
+  en: 0b8f900a8cfe670e
+  zh: 37d316b219d2b4e4
+/deepseek-harness-goal-preset-tutorial-test-scenarios/2-test-scenarios-overview:
+  en: 999c05d6d0d10ebf
+  zh: f92a300fc32ff63a
+/deepseek-harness-goal-preset-tutorial-test-scenarios/2-test-scenarios-overview/scenario-1-multi-step-csv-data-explorer-cleaner:
+  en: a58999e12a6595c4
+  zh: dcc194e46ea9d17d
+/deepseek-harness-goal-preset-tutorial-test-scenarios/2-test-scenarios-overview/scenario-2-automated-pandas-data-analysis-reporting:
+  en: 59dfae14a273f845
+  zh: bd8ab13a923e3169
+/deepseek-harness-goal-preset-tutorial-test-scenarios/3-directory-layout:
+  en: a6b2259a03bc1158
+  zh: fdf196452ecd00af
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run:
+  en: 53558a489713419d
+  zh: 45cb8fee7b00704d
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run/option-a-run-automated-test-suite-offline-verification:
+  en: 040dfecfb6fce483
+  zh: f5e0c2f122ff1fb4
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run/option-b-interactive-cli-runner-mock-offline-mode:
+  en: 73d7589368747e02
+  zh: 4ef99838f7ae3596
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run/option-b-interactive-cli-runner-mock-offline-mode/run-scenario-1-csv-exploration-cleaner:
+  en: 03fc2eeaab15a3a6
+  zh: df32f1c52b61b7b6
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run/option-b-interactive-cli-runner-mock-offline-mode/run-scenario-2-pandas-analysis-reporting:
+  en: 3f83eace881de327
+  zh: 9c7103a89391b9eb
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run/option-c-run-with-real-llm-openai-deepseek-custom-gateway:
+  en: 9ed3e2515d48c246
+  zh: 820f27041fee3042
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run/option-c-run-with-real-llm-openai-deepseek-custom-gateway/openai-gpt-4o-mini:
+  en: 4e004ef0b7ac5d85
+  zh: e43d4c1ab94fff0a
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run/option-c-run-with-real-llm-openai-deepseek-custom-gateway/deepseek-official-deepseek-chat:
+  en: 13667d9e36dc3986
+  zh: c85ee18abd64ac97
+/deepseek-harness-goal-preset-tutorial-test-scenarios/4-how-to-run/option-c-run-with-real-llm-openai-deepseek-custom-gateway/custom-base-url-gateway:
+  en: c752ae729ff44893
+  zh: b9318f4fa4beaeaf
+/deepseek-harness-goal-preset-tutorial-test-scenarios/5-what-makes-goal-preset-special:
+  en: 5c7c855d098a28a2
+  zh: 307d8d8e65b584b3

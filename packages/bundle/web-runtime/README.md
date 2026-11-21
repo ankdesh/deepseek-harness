@@ -24,7 +24,7 @@ Start and host a product Web interface while selecting its UI modules separately
 
 Mount the main plugin and its `./startup` entry in a named `dsh` profile. The [web bundle composition](../web-app/cordis.patch.yml) supplies a complete example. This package does not select conversation UI plugins; the product declares those packages and rows separately.
 
-The startup service accepts host, port, trusted-host, and browser-opening options. Required startup failures prevent the ready URL and browser handoff. A product must supply the host server, client connection, static frontend provider, and other declared services.
+The startup service accepts host, port, trusted-host, and browser-opening options. Required startup failures prevent the ready URL and browser handoff. Existing product connection rows can read explicitly configured authorities from `ctx.webRuntime.trustedHosts`. A product must supply the host server, client connection, static frontend provider, and other declared services.
 
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
@@ -50,16 +50,15 @@ The startup service accepts host, port, trusted-host, and browser-opening option
 
 #### What the model sees
 
-When `surfaceContext` is true, the `harness:source` section identifies the on-disk Harness implementation without claiming it is the working directory, and the `app:web-surface` global section (first-party order 10100, after reusable instructions) orients the model to the GUI: the canonical local URL, the "this page" referent, the update contract (the reload receiver is always on; no-refresh reloads additionally need the `pnpm run dev:web` watcher), and the instruction not to start replacement servers. `DSH_WEB_URL` additionally appears in the managed bash environment with its description, resolved per invocation from the live server. When it is false, neither section nor the variable is registered.
+When `surfaceContext` is true, the runtime registers `DSH_WEB_URL` for shell commands. A profile that mounts [Harness development context](../../context/harness-dev-context/README.md) can also include Web orientation in model requests.
 
 #### Token effect
 
-One source line and one prompt paragraph per session plus two managed-environment variable lines; constant per process.
+The shell variable has no prompt cost. The development context package owns any model text.
 
 #### KV Cache effect
 
-Source and Web sections follow first-party reusable instructions. Different checkout paths or local ports leave that preceding prefix unchanged when tools and configuration match; provider cache reuse is not guaranteed.
-
+The Web runtime does not modify model input. The enabled context plugins determine whether the advertised URL appears in requests.
 
 ## Known Limitations and Deferred Work
 

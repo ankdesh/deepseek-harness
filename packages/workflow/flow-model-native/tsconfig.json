@@ -8,6 +8,7 @@
     "src"
   ],
   "references": [
+    { "path": "../../core/tool-executor-native" },
     {
       "path": "../../../vendor/cosmokit"
     },
@@ -33,7 +34,7 @@
       "path": "../../core/system-prompt"
     },
     {
-      "path": "../../subagent/subagent-in-process-driver"
+      "path": "../../subagent/subagent"
     },
     {
       "path": "../../util/values"

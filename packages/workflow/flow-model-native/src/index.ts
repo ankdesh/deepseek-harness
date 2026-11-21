@@ -2,7 +2,7 @@ import { reserveRequestTokens, reportedRequestTokens } from '@deepseek-ai/dsh-to
 /** Result-only native model phases with durable message and tool-result correlation. */
 import type {} from '@deepseek-ai/dsh-session-persistence'
 import type { Context } from '@deepseek-ai/cordis'
-import { freezeMessage, MessageId } from '@deepseek-ai/dsh-llm'
+import { createUserMessage, MessageId } from '@deepseek-ai/dsh-llm'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-token-meter'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -10,7 +10,7 @@ import {
   attachStructuredRuntime,
   STRUCTURED_OUTPUT_INSTRUCTION,
   STRUCTURED_OUTPUT_TOOL,
-} from '@deepseek-ai/dsh-subagent-in-process-driver'
+} from '@deepseek-ai/dsh-subagent'
 import { assertFlowValue, FlowInterruptedError, FlowModelAttemptError } from '@deepseek-ai/dsh-flow'
 import type {
   FlowModelNode,
@@ -22,6 +22,11 @@ import type {
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import type { UserMessage } from '@deepseek-ai/dsh-llm'
 import type { SessionId } from '@deepseek-ai/dsh-session'
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'flow-model-native': { kind: 'flow-model-native'; form: 'notice'; summary: string }
+  }
+}
 declare module '@deepseek-ai/cordis' {
   interface Events {
     /** Bind host policies to one phase scope.
@@ -67,10 +72,10 @@ export function readFlowPhaseResult(
 ): FlowModelResult | undefined {
   let turn: number | undefined,
     currentTurn: number | undefined,
-    call: { id: string; value: JsonValue } | undefined,
-    accepted = false,
+    accepted: { value: JsonValue } | undefined,
     tokens: number | undefined,
     invalidUsage = false
+  const calls = new Map<string, string>()
   for (const e of events) {
     if (e.type === 'turn/start') currentTurn = e.data.turn
     if (e.type === 'user/message' && e.data.id === flowPhaseMessageId(context)) turn = currentTurn
@@ -82,14 +87,15 @@ export function readFlowPhaseResult(
       else tokens = (tokens ?? 0) + actual
     }
     if (e.type === 'tool/call' && e.data.turn === turn && e.data.name === STRUCTURED_OUTPUT_TOOL)
-      call = { id: String(e.data.callId), value: JSON.parse(e.data.arguments) as JsonValue }
-    if (e.type === 'tool/result' && e.data.turn === turn)
-      for (const block of e.data.message.content)
-        if (String(block.toolCallId) === call?.id) accepted = !block.isError
+      calls.set(String(e.data.callId), e.data.arguments)
+    if (e.type === 'tool/result' && e.data.turn === turn && !e.data.message.isError && accepted === undefined) {
+      const argumentsJson = calls.get(String(e.data.message.toolCallId))
+      if (argumentsJson !== undefined) accepted = { value: JSON.parse(argumentsJson) as JsonValue }
+    }
     if (e.type === 'turn/end' && e.data.turn === turn) {
-      if (e.data.reason.kind !== 'completed' || !accepted || !call) return undefined
-      assertFlowValue(node.outputSchema, call.value, 'model phase result')
-      return { value: call.value, ...(tokens === undefined || invalidUsage ? {} : { tokens }) }
+      if (e.data.reason.kind !== 'completed' || accepted === undefined) return undefined
+      assertFlowValue(node.outputSchema, accepted.value, 'model phase result')
+      return { value: accepted.value, ...(tokens === undefined || invalidUsage ? {} : { tokens }) }
     }
   }
   return undefined
@@ -142,7 +148,7 @@ function discardQueuedFlowPhases(agent: Agent): void {
   // Persisted notices are requests to the flow executor, never autonomous
   // conversation input after restoration. Completed receipts remain in the log.
   for (const message of [...agent.inbox.nextTurn, ...agent.inbox.nextStep])
-    if (message.source.kind === 'plugin' && message.source.plugin === 'flow-model-native')
+    if (message.source.kind === 'flow-model-native')
       agent.inbox.remove(message.id)
 }
 async function waitForIdle(agent: Agent, signal: AbortSignal): Promise<void> {
@@ -215,6 +221,18 @@ export class NativeFlowModelProvider implements FlowModelProvider {
       let streamedTokens: number | undefined
       const heldInput: UserMessage[] = []
       const host = this.ctx
+      const priorSelection = agent.model.current()
+      const route = host.flows.get(context.executionId, { kind: 'host', sessionId: context.sourceSessionId }).modelOptions
+      const pinned = route && typeof route === 'object' && !Array.isArray(route) ? route : {}
+      const selectPinned = priorSelection !== undefined && typeof pinned.provider === 'string' && typeof pinned.model === 'string'
+        ? {
+            provider: pinned.provider,
+            model: pinned.model,
+            ...(typeof pinned.reasoningEffort === 'string'
+              ? { reasoningEffort: pinned.reasoningEffort as import('@deepseek-ai/dsh-llm').ReasoningEffortId }
+              : {}),
+          }
+        : undefined
       const plugin = await agent.ctx.plugin({
         name: 'flow-native-phase',
         async apply(scope: Context) {
@@ -225,9 +243,10 @@ export class NativeFlowModelProvider implements FlowModelProvider {
             instructions: node.instructions + '\n\n' + STRUCTURED_OUTPUT_INSTRUCTION,
             scope,
           })
-          attachStructuredRuntime(scope, node.outputSchema)
+          attachStructuredRuntime(scope, node.outputSchema, () => failed === undefined)
+          scope.tools.restrictPhase([STRUCTURED_OUTPUT_TOOL])
           scope.systemPrompt.suppressRuntimeContext()
-          if (scope.tools.modeFor(agent) !== 'native')
+          if (!scope.tools.isDirectlyCallable(STRUCTURED_OUTPUT_TOOL, agent))
             throw new Error('Native flow model phases require native tool presentation')
           scope.tools.guard(
             exec =>
@@ -247,35 +266,9 @@ export class NativeFlowModelProvider implements FlowModelProvider {
             if (subject === agent && (failed || step > 1)) return { kind: 'reject' }
             return next()
           })
-          scope.on('system-prompt/assemble', async (_assembly, assembleContext, next) => {
-            const assembled = await next()
-            return assembleContext.scope === agent
-              ? {
-                ...assembled,
-                tools: assembled.tools.filter(tool => tool.name === STRUCTURED_OUTPUT_TOOL),
-              }
-              : assembled
-          })
           scope.on('agent/request', async (payload, next) => {
             const options = await next()
-            if (payload.agent !== agent) return options
-            const route = host.flows.get(context.executionId, {
-              kind: 'host',
-              sessionId: context.sourceSessionId,
-            }).modelOptions
-            const pinned = route && typeof route === 'object' && !Array.isArray(route) ? route : {}
-            return {
-              ...options,
-              ...(typeof pinned.provider === 'string' ? { provider: pinned.provider } : {}),
-              ...(typeof pinned.model === 'string' ? { model: pinned.model } : {}),
-              ...(typeof pinned.reasoningEffort === 'string'
-                ? {
-                  reasoningEffort:
-                      pinned.reasoningEffort as import('@deepseek-ai/dsh-llm').ReasoningEffortId,
-                }
-                : {}),
-              maxTokens: limits.maxOutputTokens,
-            }
+            return payload.agent === agent ? { ...options, maxTokens: limits.maxOutputTokens } : options
           })
           scope.on('llm/stream', async function* (options, next) {
             try {
@@ -327,10 +320,9 @@ export class NativeFlowModelProvider implements FlowModelProvider {
       signal.addEventListener('abort', cancel, { once: true })
       try {
         signal.throwIfAborted()
+        if (selectPinned !== undefined) agent.model.select(selectPinned)
         agent.followup(
-          freezeMessage({
-            role: 'user',
-            id: messageId,
+          { ...createUserMessage({
             content: [
               {
                 type: 'text',
@@ -338,12 +330,11 @@ export class NativeFlowModelProvider implements FlowModelProvider {
               },
             ],
             source: {
-              kind: 'plugin',
-              plugin: 'flow-model-native',
+              kind: 'flow-model-native',
               form: 'notice',
               summary: 'Flow model phase',
             },
-          }),
+          }), id: messageId },
         )
         entered = true
         if (!(await this.ctx.sessions.flush(agent.session)))
@@ -375,6 +366,7 @@ export class NativeFlowModelProvider implements FlowModelProvider {
           await agent.whenIdle()
         }
         await plugin.dispose()
+        if (selectPinned !== undefined && priorSelection !== undefined) agent.model.select(priorSelection)
         for (const message of heldInput) agent.followup(message)
         retainRestored = heldInput.length > 0
       }

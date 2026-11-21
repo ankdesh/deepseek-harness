@@ -8,6 +8,7 @@ import type { PromptBundle } from '@deepseek-ai/dsh-prompt-catalog'
 
 const MAX_FILE_BYTES = 256 * 1024
 
+/** Directories that contain startup-owned prompt definition files. */
 export interface Config {
   /** Trusted bundle files or non-recursive directories loaded once at startup. */
   roots: string[]
@@ -28,6 +29,11 @@ function record(value: unknown, where: string): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 
+/** Decode a prompt bundle and reject unknown fields and custom YAML tags.
+ * @param text - complete YAML document.
+ * @param source - diagnostic name for the document.
+ * @returns the validated immutable bundle.
+ */
 export function parsePromptBundleYaml(text: string, source = 'prompt bundle'): PromptBundle {
   if (Buffer.byteLength(text) > MAX_FILE_BYTES) throw new Error(`${source} exceeds ${MAX_FILE_BYTES} bytes`)
   const document = parseDocument(text, { prettyErrors: true, uniqueKeys: true, merge: false, schema: 'core' })

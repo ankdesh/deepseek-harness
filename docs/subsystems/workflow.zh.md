@@ -4,7 +4,7 @@
 
 工作流 seam 允许 agent（智能体）运行由模型编写、会启动 subagent 的编排脚本。与 [subagent](subagent.zh.md) 一样，它是**一项可选能力**，不属于 agent loop，因此其类型和操作记录在此处，而非 [core.md](core.zh.md)。与 bash 一样，每个上下文只允许一个引擎实现提供 `ctx.workflowEngine`；没有命名提供方注册表（第二个引擎通过插件配置替换第一个，而不与它同时运行）。
 
-Service Definition：[dsh-workflow](../../packages/workflow/workflow)（`ctx.workflowEngine` 和下文词汇）。[dsh-workflow-ptc](../../packages/workflow/workflow-ptc)通过共享 Node PTC 进程运行时按调用 Session 的文件策略执行 VM 与辅助函数。消费方为 [dsh-tool-workflow](../../packages/workflow/tool-workflow) 和需显式启用的 [dsh-tool-ralph](../../packages/workflow/tool-ralph)。[工作流沙箱复用](../../.agents/notes/implemented/architecture/2026-09-13-workflow-ptc-sandbox-reuse.zh.md)负责执行选择；[动态工作流决策](../../.agents/notes/implemented/feature/2026-07-05-dynamic-workflows.zh.md)负责脚本语义。
+Service Definition：[dsh-workflow](../../packages/workflow/workflow)（`ctx.workflowEngine` 和下文词汇）。[dsh-workflow-ptc](../../packages/workflow/workflow-ptc)通过共享 Node PTC 进程运行时按调用 Session 的文件策略执行 VM 与辅助函数。消费方为 [dsh-tool-workflow](../../packages/workflow/tool-workflow) 和需显式启用的 [dsh-tool-ralph](../../packages/experimental/tool-ralph)。[工作流沙箱复用](../../.agents/notes/implemented/architecture/2026-09-13-workflow-ptc-sandbox-reuse.zh.md)负责执行选择；[动态工作流参考](../../packages/workflow/workflow/README.zh.md)负责脚本语义。
 
 源码：浏览器安全词汇位于 [`packages/workflow/workflow/src/types.ts`](../../packages/workflow/workflow/src/types.ts)，Host 请求与活跃运行句柄位于 [`runtime-types.ts`](../../packages/workflow/workflow/src/runtime-types.ts)。
 
@@ -86,6 +86,11 @@ interface WorkflowResult {
   /** The failure message (present iff `stopReason` is not `completed`). */
   error?: string
   /**
+   * The code of the fatal {@link WorkflowError} that ended an `error` run;
+   * absent when the script's own exception or the engine runtime ended it.
+   */
+  errorCode?: WorkflowErrorCode
+  /**
    * How many `agent()` calls the run accepted over its whole lifetime. On a
    * graceful settlement this is the script-side count (calls still queued for
    * a concurrency slot included); on a termination path (cancellation or
@@ -119,7 +124,7 @@ interface WorkflowRun {
 
 ## 失败纪律：`WorkflowError.fatal`
 
-脚本内部的钩子误用：错误参数、未知或延迟的 `agent()` 选项、超出[结构化输出子集](../../packages/core/tools/README.zh.md)的 schema、超出上限、seam 启动失败、取消，都会抛出 `fatal: true` 的 `WorkflowError`。`parallel()`/`pipeline()` 组合器对 fatal 错误直接重新抛出，而非将该项映射为 `null`：一个拼写错误的选项必须明确报错并终止脚本，绝不能消融为看似普通子 agent 失败的结果。逐项的 `null` 保留给子运行失败（非 `completed` 的 stop reason）和阶段内的普通脚本错误。
+脚本内部的钩子误用：错误参数、未知或延迟的 `agent()` 选项、超出[结构化输出子集](../../packages/core/tools/README.zh.md)的 schema、超出上限、seam 启动失败、取消，都会抛出 `fatal: true` 的 `WorkflowError`。`parallel()`/`pipeline()` 组合器对 fatal 错误直接重新抛出，而非将该项映射为 `null`：一个拼写错误的选项必须明确报错并终止脚本，绝不能消融为看似普通子 agent 失败的结果。逐项的 `null` 保留给子运行失败（非 `completed` 的 stop reason）和阶段内的普通脚本错误。致命错误结束运行时，引擎把其 code 报告为 `WorkflowResult.errorCode`，`workflow` 工具以该 code（如 `AGENT_CAP`）失败；以 `error` 结束但没有该 code 的运行（脚本自身抛出的异常或引擎运行时失败）以 `RUN_FAILED` 失败，以 `cancelled` 结束的运行以 `CANCELLED` 失败；调用方步骤本身被中止时，改为使用工具运行时的 `AbortError` `ABORTED` 结果。
 
 ## 事件
 
@@ -129,7 +134,7 @@ interface WorkflowRun {
 
 顶层 `dsh-tool-workflow` 消费方把展示事实投影到调用它的父 Session，同时不改变执行所有权。运行接受后写 `tool-workflow/run-start`，以 `runId + seq` 配对成员开始与结束，并且只在结果已取得且 dispose 完全停稳后写 `tool-workflow/run-end`。嵌套 transport 调用不写记录。第一次 append 失败会禁用本运行后续写入，因此日志保持为空或合法连续前缀，工具结果不变。
 
-`dsh-tool-workflow/invariant` 会在实时提交前和 Session 加载时校验同一协议：每个运行只有一个 start，成员序号为正且唯一，成员 end 必须配对，仍有开放成员时不能结束运行，运行结束后不能继续更新。日志尾部缺少成员 end 或 run end 是有效的中断证据，不是损坏。
+该记录协议规定：每个运行只有一个 start，成员序号为正且唯一，成员 end 必须配对，仍有开放成员时不能结束运行，运行结束后不能继续更新。日志尾部缺少成员 end 或 run end 是有效的中断证据，不是损坏。
 
 `dsh-client-ui-workflow-run` 通过 Conversation Node 引擎把四类事件折叠为一个 `workflow-run` Chat 节点，以 run-start 序号锚定在原工作流工具节点之后。阶段组只来自真正开始过的成员，并保留精确字符串，包括字段缺省与 `''` 的区别。Location 关闭时，缺失终点会显示为已中断。[界面包 README](../../packages/client/ui-workflow-run/README.zh.md)负责定义 disclosure、状态与同父本地导航行为。
 
@@ -140,6 +145,349 @@ interface WorkflowRun {
 ## Cordis API
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
+
+<a id="ctxeventhttpsources--httpsourceservice"></a>
+
+### `ctx.eventHttpSources` — `HttpSourceService`
+
+Owns read-only network requests, cursor storage, and the publication outbox.
+
+```ts cordis-catalog
+/**
+ * Read source configuration, cursors, errors, and enabled state for one conversation.
+ * @param id - owning conversation.
+ * @returns committed source records, with credential values excluded.
+ */
+list(id: SessionId): HttpSourceRecord[]
+
+/**
+ * Register one immutable human-approved source; the first unchanged observation is a baseline.
+ * @param id - owning conversation; routing is pinned to its declared event subscriptions.
+ * @param input - explicit URL, condition, and traffic settings.
+ * @returns committed source identity and initial cursor.
+ */
+async add(id: SessionId, input: HttpSourceInput): Promise<HttpSourceRecord>
+
+/**
+ * Human enable/disable with the observed source revision; enabling retains cursors and outboxes.
+ * @param conversationId - exact owning conversation.
+ * @param id - source identity.
+ * @param revision - observed source revision.
+ * @param enabled - human polling authority.
+ * @returns committed source state.
+ */
+async control( conversationId: SessionId, id: HttpSourceId, revision: number, enabled: boolean, ): Promise<HttpSourceRecord>
+```
+
+Types: [SessionId](core.zh.md)
+
+Source: [`packages/workflow/event-system-http/src/index.ts`](../../packages/workflow/event-system-http/src/index.ts)
+
+<a id="ctxeventsystems--eventsystemservice"></a>
+
+### `ctx.eventSystems` — `EventSystemService`
+
+Owns specialists and scheduling; the primary native agent remains owned by its caller.
+
+```ts cordis-catalog
+/**
+ * Register an exact trusted template; the returned disposer removes only this contribution.
+ * @param input - trusted resolved definition.
+ * @returns disposer for this exact registration.
+ */
+registerDefinition(input: EventSystemDefinition): () => void
+
+/**
+ * Resolve an exact template version; missing configuration fails before conversation execution.
+ * @param id - catalog identity.
+ * @param version - exact catalog version.
+ * @returns registered immutable definition.
+ */
+definition(id: string, version: string): EventSystemDefinition
+
+/** Prevent new catalog registrations after trusted startup composition. */
+seal(): void
+
+/**
+ * Locate a member by native session identity; routing never accepts another conversation.
+ * @param sessionId - native member identity.
+ * @returns owning conversation and role, if configured.
+ */
+membership(sessionId: SessionId): EventSystemMembership | undefined
+
+/**
+ * Read committed state.
+ * @param id - primary conversation identity.
+ * @returns committed pinned state, if configured.
+ */
+get(id: SessionId): EventSystemSnapshot | undefined
+
+/**
+ * Pin a new conversation or attach to its existing configuration without rearming recovered state.
+ * @param primary - caller-owned native primary agent.
+ * @param mode - immutable conversation execution mode.
+ * @param definition - resolved trusted roster and subscriptions.
+ * @param limits - explicit aggregate resource bounds.
+ * @returns existing or newly pinned conversation state.
+ */
+async attach( primary: Agent, mode: EventSystemSnapshot['mode'], definition: EventSystemDefinition, limits: ExecutionLimits, ): Promise<EventSystemSnapshot>
+
+/**
+ * Publish on behalf of the exact live calling member; producer and causal identity are host-owned.
+ * @param agent - exact live initiator.
+ * @param type - declared permitted event type.
+ * @param payload - JSON payload validated against the event schema.
+ * @param dedupeKey - stable producer key for the same result.
+ * @returns durably committed event identity.
+ */
+async publishAgent(agent: Agent, type: string, payload: JsonValue, dedupeKey: string): Promise<EventId>
+
+/**
+ * Admit a trusted application/user event after payload validation and before scheduling.
+ * @param id - primary conversation identity.
+ * @param input - trusted validated publication request.
+ * @param revision - optional exact human-observed revision.
+ * @returns durably committed event identity.
+ */
+async publishHost(id: SessionId, input: PublishEventInput, revision?: number): Promise<EventId>
+
+/**
+ * Pause new admissions while letting the current tool result settle, for host review gates.
+ * @param id - primary conversation identity.
+ * @param reason - visible host review reason.
+ * @returns committed state without cancelling the current tool.
+ */
+async hold(id: SessionId, reason: string): Promise<EventSystemSnapshot>
+
+/**
+ * Human lifecycle mutation using the exact observed revision; Resume preserves all spending.
+ * @param id - primary conversation identity.
+ * @param revision - exact observed revision.
+ * @param action - human-authorized lifecycle change.
+ * @returns committed state after scheduling or quiescence.
+ */
+async control(id: SessionId, revision: number, action: 'pause' | 'resume' | 'stop'): Promise<EventSystemSnapshot>
+
+/**
+ * Explicitly retry uncertain work; the caller must acknowledge possible prior effects.
+ * @param id - primary conversation identity.
+ * @param revision - exact observed revision.
+ * @param deliveryId - failed or interrupted attempt identity.
+ * @param acknowledgeUncertainty - explicit human acknowledgement of possible prior effects.
+ * @returns committed state retaining the previous attempt.
+ */
+async retry( id: SessionId, revision: number, deliveryId: DeliveryId, acknowledgeUncertainty: boolean, ): Promise<EventSystemSnapshot>
+
+/**
+ * List persisted conversations for trusted source adapters.
+ * @returns all pinned conversation snapshots.
+ */
+list(): EventSystemSnapshot[]
+
+/**
+ * Publish a source observation only while the owning conversation has active authority.
+ * @param id - owning conversation.
+ * @param input - validated source outbox item.
+ * @returns durable event identity for idempotent source acknowledgement.
+ */
+async publishTrigger(id: SessionId, input: PublishEventInput): Promise<EventId>
+
+/**
+ * Persist a future correlated wait and disarm native goal continuation without spending rounds.
+ * @param agent - exact live member executing the waiting tool.
+ * @param request - declared event or host-human response request.
+ * @returns committed wait with its host-generated response identity.
+ */
+async wait(agent: Agent, request: WaitRequest): Promise<EventWait>
+
+/**
+ * Answer one exact human wait; stale answers cannot wake another activation.
+ * @param id - owning conversation.
+ * @param revision - observed execution revision.
+ * @param waitId - current human response identity.
+ * @param answer - bounded human answer logged through the native inbox.
+ * @returns durable response event identity.
+ */
+async answerWait(id: SessionId, revision: number, waitId: WaitId, answer: string): Promise<EventId>
+
+/** Route a trusted host phase's spending to its existing primary conversation.
+ * @param agent - Exact live phase conversation.
+ * @param conversationId - Existing primary budget identity.
+ * @returns Scoped registration disposer.
+ */
+routeRequestBudget(agent: Agent, conversationId: SessionId): () => void
+```
+
+Types: [Agent](core.zh.md) · [SessionId](core.zh.md)
+
+Source: [`packages/workflow/event-system/src/index.ts`](../../packages/workflow/event-system/src/index.ts)
+
+<a id="ctxeventsystemsyaml--eventsystemyamlprovider"></a>
+
+### `ctx.eventSystemsYaml` — `EventSystemYamlProvider`
+
+Register startup templates and release all registrations on disposal.
+
+Source: [`packages/workflow/event-system-yaml/src/index.ts`](../../packages/workflow/event-system-yaml/src/index.ts)
+
+<a id="ctxsworkflow--sworkflowservice"></a>
+
+### `ctx.sWorkflow` — `SWorkflowService`
+
+Sealed catalogs and state-machine owner.
+
+```ts cordis-catalog
+/**
+ * Register an immutable workflow definition before sealing.
+ * @param input - Value to register.
+ * @param source - Origin of the registration.
+ * @returns Disposer that removes this registration.
+ */
+registerDefinition(input: SWorkflowDefinition, source: string = 'inline'): () => void
+
+/**
+ * Register an immutable service adapter before sealing.
+ * @param input - Value to register.
+ * @param source - Origin of the registration.
+ * @returns Disposer that removes this registration.
+ */
+registerAdapter(input: SWorkflowServiceAdapter, source: string = 'inline'): () => void
+
+/**
+ * Close registration for this catalog.
+ */
+seal(): void
+
+/**
+ * Report whether registration is closed.
+ * @returns True after sealing.
+ */
+isSealed(): boolean
+
+/**
+ * List available workflow definitions and service adapters.
+ * @param service - Optional service filter.
+ * @param preset - Optional caller preset filter.
+ * @returns Matching catalog entries.
+ */
+catalog(service?: string, preset?: SWorkflowPreset): { definitions: readonly SWorkflowCatalogEntry<SWorkflowDefinition>[] adapters: readonly SWorkflowCatalogEntry<SWorkflowServiceAdapter>[] }
+
+/**
+ * Read the current Session workflow projection.
+ * @param agent - Agent that owns the Session.
+ * @returns Projected workflow state.
+ */
+get(agent: Agent): SWorkflowProjection
+
+/**
+ * Start a run in the active Agent Session.
+ * @param agent - Agent that owns the Session.
+ * @param request - Definition, adapter, and limits for this run.
+ * @returns Snapshot of the new run.
+ */
+start(agent: Agent, request: SWorkflowStartRequest): SWorkflowSnapshot
+
+/**
+ * Replace the draft in an active run.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param draft - Replacement draft value.
+ * @param summary - Short description of the draft.
+ * @returns Snapshot with the updated draft.
+ */
+updateDraft(agent: Agent, ref: SWorkflowRunRef, draft: JsonValue, summary: string): SWorkflowSnapshot
+
+/**
+ * Record step progress and resource use.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param stepId - Step that reached the checkpoint.
+ * @param note - Checkpoint text.
+ * @param usage - Resources to add to the recorded totals.
+ * @returns Snapshot after the checkpoint.
+ */
+checkpoint(agent: Agent, ref: SWorkflowRunRef, stepId: string, note: string, usage: Partial<SWorkflowUsage> = {}): SWorkflowSnapshot
+
+/**
+ * Pause progress until the owner supplies input.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param prompt - Question to show the owner.
+ * @returns Snapshot with the pending request.
+ */
+requestInput(agent: Agent, ref: SWorkflowRunRef, prompt: string): SWorkflowSnapshot
+
+/**
+ * Ask the owner to review the result.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param prompt - Question to show the owner.
+ * @returns Snapshot with the pending review.
+ */
+requestCompletion(agent: Agent, ref: SWorkflowRunRef, prompt: string): SWorkflowSnapshot
+
+/**
+ * Supply the requested input for the run revision.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param answer - Response from the owner.
+ * @returns Snapshot after accepting the answer.
+ */
+answerInput(agent: Agent, ref: SWorkflowRunRef, answer: string): SWorkflowSnapshot
+
+/**
+ * Approve the pending completion review.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns Snapshot after approval.
+ */
+approveCompletion(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot
+
+/**
+ * Pause the current run revision.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns Snapshot of the paused run.
+ */
+pause(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot
+
+/**
+ * Resume a paused run.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns Snapshot of the resumed run.
+ */
+resume(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot
+
+/**
+ * Cancel the current run revision.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns Snapshot of the cancelled run.
+ */
+cancel(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot
+
+/**
+ * Raise the limits for the current run revision.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param patch - Limits to increase.
+ * @returns Snapshot with the revised limits.
+ */
+raiseBudgets(agent: Agent, ref: SWorkflowRunRef, patch: Partial<SWorkflowBudget>): SWorkflowSnapshot
+```
+
+Types: [Agent](core.zh.md)
+
+Source: [`packages/workflow/s-workflow/src/index.ts`](../../packages/workflow/s-workflow/src/index.ts)
+
+<a id="ctxsworkflowyaml--sworkflowyamlprovider"></a>
+
+### `ctx.sWorkflowYaml` — `SWorkflowYamlProvider`
+
+Startup barrier proving every configured workflow document is registered.
+
+Source: [`packages/workflow/s-workflow-yaml/src/index.ts`](../../packages/workflow/s-workflow-yaml/src/index.ts)
 
 <a id="ctxworkflowengine--workflowengine-abstract-seam"></a>
 

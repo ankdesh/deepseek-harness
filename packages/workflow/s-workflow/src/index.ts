@@ -1,3 +1,4 @@
+import type { ProjectionHandle } from '@deepseek-ai/dsh-session-projection'
 /**
  * Startup-sealed workflow and service-adapter catalogs plus a durable,
  * human-governed workflow state machine.
@@ -175,7 +176,10 @@ function validateIdentity(value: { id: string; version: string }, where: string)
   if (!ID.test(value.id) || !VERSION.test(value.version)) throw new Error(`${where} identity is invalid`)
 }
 
-/** Validate one definition without accepting executable code. */
+/** Validate one definition without accepting executable code.
+ * @param value - candidate workflow definition.
+ * @returns the validated definition.
+ */
 export function validateSWorkflowDefinition(value: SWorkflowDefinition): SWorkflowDefinition {
   if (value.apiVersion !== 'dsh.deepseek.ai/v1' || value.kind !== 'WorkflowDefinition') {
     throw new Error('workflow definition apiVersion or kind is invalid')
@@ -197,7 +201,10 @@ export function validateSWorkflowDefinition(value: SWorkflowDefinition): SWorkfl
   return { ...value, metadata: { ...value.metadata }, presets: [...value.presets], steps }
 }
 
-/** Validate and detach one service adapter manifest. */
+/** Validate and detach one service adapter manifest.
+ * @param value - candidate adapter manifest.
+ * @returns the validated adapter with detached manifest data.
+ */
 export function validateSWorkflowServiceAdapter(value: SWorkflowServiceAdapter): SWorkflowServiceAdapter {
   if (value.apiVersion !== 'dsh.deepseek.ai/v1' || value.kind !== 'ServiceAdapter') {
     throw new Error('service adapter apiVersion or kind is invalid')
@@ -253,7 +260,11 @@ const changeSchema = zod.object({
   workflow: snapshotSchema,
 }).strict()
 
-/** Pure strict fold used by the projection registry and tests. */
+/** Pure strict fold used by the projection registry and tests.
+ * @param state - workflow state before the event.
+ * @param event - next Session event in replay order.
+ * @returns workflow state after applying the event.
+ */
 export function applySWorkflowProjection(state: SWorkflowProjectionState, event: SessionEvent): SWorkflowProjectionState {
   if (state.failure !== null || event.type !== 's-workflow/change') return state
   try {
@@ -289,26 +300,56 @@ export class SWorkflowService extends Service {
   private readonly adapters = new Map<string, SWorkflowCatalogEntry<SWorkflowServiceAdapter>>()
   private sealed = false
 
+  private projection!: ProjectionHandle<SWorkflowProjectionState>
+
   constructor(ctx: Context) {
     super(ctx, 'sWorkflow')
-    ctx.sessionProjections.register(sWorkflowProjectionDefinition)
   }
 
-  registerDefinition(input: SWorkflowDefinition, source = 'inline'): () => void {
+  protected async [Service.init](): Promise<void> {
+    this.projection = await this.ctx.sessionProjections.register(sWorkflowProjectionDefinition)
+  }
+
+  /**
+   * Register an immutable workflow definition before sealing.
+   * @param input - Value to register.
+   * @param source - Origin of the registration.
+   * @returns Disposer that removes this registration.
+   */
+  registerDefinition(input: SWorkflowDefinition, source: string = 'inline'): () => void {
     if (this.sealed) throw new Error('workflow catalog is sealed')
     const value = validateSWorkflowDefinition(input)
     return this.register(this.definitions, value, source)
   }
 
-  registerAdapter(input: SWorkflowServiceAdapter, source = 'inline'): () => void {
+  /**
+   * Register an immutable service adapter before sealing.
+   * @param input - Value to register.
+   * @param source - Origin of the registration.
+   * @returns Disposer that removes this registration.
+   */
+  registerAdapter(input: SWorkflowServiceAdapter, source: string = 'inline'): () => void {
     if (this.sealed) throw new Error('workflow catalog is sealed')
     const value = validateSWorkflowServiceAdapter(input)
     return this.register(this.adapters, value, source)
   }
 
+  /**
+   * Close registration for this catalog.
+   */
   seal(): void { this.sealed = true }
+  /**
+   * Report whether registration is closed.
+   * @returns True after sealing.
+   */
   isSealed(): boolean { return this.sealed }
 
+  /**
+   * List available workflow definitions and service adapters.
+   * @param service - Optional service filter.
+   * @param preset - Optional caller preset filter.
+   * @returns Matching catalog entries.
+   */
   catalog(service?: string, preset?: SWorkflowPreset): {
     definitions: readonly SWorkflowCatalogEntry<SWorkflowDefinition>[]
     adapters: readonly SWorkflowCatalogEntry<SWorkflowServiceAdapter>[]
@@ -320,9 +361,14 @@ export class SWorkflowService extends Service {
     return { definitions, adapters }
   }
 
+  /**
+   * Read the current Session workflow projection.
+   * @param agent - Agent that owns the Session.
+   * @returns Projected workflow state.
+   */
   get(agent: Agent): SWorkflowProjection {
     this.assertLive(agent)
-    const state = this.ctx.sessionProjections.stateOf(agent.session, 'sWorkflow')
+    const state = this.projection.stateOf(agent.session)
     if (state === undefined) throw new Error('s-workflow projection is not registered')
     if (state.failure !== null) throw new Error(`s-workflow replay failed: ${state.failure}`)
     const current = state.current
@@ -339,6 +385,12 @@ export class SWorkflowService extends Service {
     return current
   }
 
+  /**
+   * Start a run in the active Agent Session.
+   * @param agent - Agent that owns the Session.
+   * @param request - Definition, adapter, and limits for this run.
+   * @returns Snapshot of the new run.
+   */
   start(agent: Agent, request: SWorkflowStartRequest): SWorkflowSnapshot {
     this.assertLive(agent)
     const current = this.get(agent)
@@ -362,12 +414,29 @@ export class SWorkflowService extends Service {
     return this.commit(agent, 'start', workflow)
   }
 
+  /**
+   * Replace the draft in an active run.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @param draft - Replacement draft value.
+   * @param summary - Short description of the draft.
+   * @returns Snapshot with the updated draft.
+   */
   updateDraft(agent: Agent, ref: SWorkflowRunRef, draft: JsonValue, summary: string): SWorkflowSnapshot {
     const current = this.expect(agent, ref, ['active'])
     if (summary.trim() === '') throw new Error('draft summary must be non-empty')
     return this.replace(agent, 'draft', current, { draft, draftSummary: summary.trim() })
   }
 
+  /**
+   * Record step progress and resource use.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @param stepId - Step that reached the checkpoint.
+   * @param note - Checkpoint text.
+   * @param usage - Resources to add to the recorded totals.
+   * @returns Snapshot after the checkpoint.
+   */
   checkpoint(agent: Agent, ref: SWorkflowRunRef, stepId: string, note: string, usage: Partial<SWorkflowUsage> = {}): SWorkflowSnapshot {
     const current = this.expect(agent, ref, ['active'])
     if (!ID.test(stepId) || note.trim() === '') throw new Error('checkpoint step or note is invalid')
@@ -383,17 +452,38 @@ export class SWorkflowService extends Service {
     })
   }
 
+  /**
+   * Pause progress until the owner supplies input.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @param prompt - Question to show the owner.
+   * @returns Snapshot with the pending request.
+   */
   requestInput(agent: Agent, ref: SWorkflowRunRef, prompt: string): SWorkflowSnapshot {
     const current = this.expect(agent, ref, ['active'])
     return this.wait(agent, current, 'input', prompt)
   }
 
+  /**
+   * Ask the owner to review the result.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @param prompt - Question to show the owner.
+   * @returns Snapshot with the pending review.
+   */
   requestCompletion(agent: Agent, ref: SWorkflowRunRef, prompt: string): SWorkflowSnapshot {
     const current = this.expect(agent, ref, ['active'])
     if (current.draft === undefined) throw new Error('completion review requires a workflow draft')
     return this.wait(agent, current, 'completion', prompt)
   }
 
+  /**
+   * Supply the requested input for the run revision.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @param answer - Response from the owner.
+   * @returns Snapshot after accepting the answer.
+   */
   answerInput(agent: Agent, ref: SWorkflowRunRef, answer: string): SWorkflowSnapshot {
     const current = this.expect(agent, ref, ['awaiting-user-input'])
     if (answer.trim() === '') throw new Error('workflow answer must be non-empty')
@@ -403,25 +493,56 @@ export class SWorkflowService extends Service {
     })
   }
 
+  /**
+   * Approve the pending completion review.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @returns Snapshot after approval.
+   */
   approveCompletion(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot {
     const current = this.expect(agent, ref, ['awaiting-user-completion'])
     return this.replace(agent, 'complete', current, { status: 'complete', pending: undefined })
   }
 
+  /**
+   * Pause the current run revision.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @returns Snapshot of the paused run.
+   */
   pause(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot {
     return this.replace(agent, 'pause', this.expect(agent, ref, ['active']), { status: 'paused' })
   }
 
+  /**
+   * Resume a paused run.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @returns Snapshot of the resumed run.
+   */
   resume(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot {
     return this.replace(agent, 'resume', this.expect(agent, ref, ['paused', 'blocked']), {
       status: 'active', blockedReason: undefined,
     })
   }
 
+  /**
+   * Cancel the current run revision.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @returns Snapshot of the cancelled run.
+   */
   cancel(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot {
     return this.replace(agent, 'cancel', this.expect(agent, ref, ACTIVE), { status: 'cancelled', pending: undefined })
   }
 
+  /**
+   * Raise the limits for the current run revision.
+   * @param agent - Agent that owns the Session.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @param patch - Limits to increase.
+   * @returns Snapshot with the revised limits.
+   */
   raiseBudgets(agent: Agent, ref: SWorkflowRunRef, patch: Partial<SWorkflowBudget>): SWorkflowSnapshot {
     const current = this.expect(agent, ref, ACTIVE)
     const budget = resolveBudget(current.preset, { ...current.budget, ...patch })

@@ -58,7 +58,11 @@ function strictDocument(text: string, source: string): Record<string, unknown> {
   return record(document.toJS({ maxAliasCount: 0 }), source)
 }
 
-/** Parse one no-code catalog document and reject unknown fields at every level. */
+/** Parse one no-code catalog document and reject unknown fields at every level.
+ * @param text - complete YAML document.
+ * @param source - diagnostic name for the document.
+ * @returns the validated workflow catalog document.
+ */
 export function parseSWorkflowYaml(text: string, source = 's-workflow document'): SWorkflowYamlDocument {
   const root = strictDocument(text, source)
   const common = ['apiVersion', 'kind', 'metadata', 'service']

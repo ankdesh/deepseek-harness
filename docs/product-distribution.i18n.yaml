@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for product-distribution.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/product-distribution.md
-product-distribution.md: 9177f10c87e63bf977418cefae40fb580180d14c
-product-distribution.zh.md: cb79ab343759ba6477c65d200645e1a28c2e1a1c
+/product-development-and-native-distributions:
+  en: 493f4576cf586109
+  zh: b490fdbaf880c25d
+/product-development-and-native-distributions/summary:
+  en: 7eb454e3ffeb47ea
+  zh: 64b6205a0299fc33
+/product-development-and-native-distributions/table-of-contents:
+  en: 9509a11e8a46c46e
+  zh: 6d0a58619b10bde9
+/product-development-and-native-distributions/development-interface:
+  en: 9fd4b7f362f18256
+  zh: 6666cde84bdc04be
+/product-development-and-native-distributions/release-interface:
+  en: 400e8e0345f535da
+  zh: 8b751170b64c345a
+/product-development-and-native-distributions/maintenance:
+  en: 7dc9bc686944fc95
+  zh: 2fb6edb1407b7a25
+/product-development-and-native-distributions/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

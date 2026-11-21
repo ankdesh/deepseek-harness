@@ -9,16 +9,21 @@ import { Context, Service } from '@deepseek-ai/cordis'
 const ID = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/
 const VERSION = /^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?$/
 const PLACEHOLDER = /\{\{\s*([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)\s*\}\}/g
+/** Maximum UTF-8 bytes in an individual prompt text. */
 export const MAX_PROMPT_TEXT_BYTES = 32 * 1024
+/** Maximum UTF-8 bytes in the canonical source bundle. */
 export const MAX_PROMPT_BUNDLE_BYTES = 128 * 1024
+/** Maximum UTF-8 bytes in the bound prompt content. */
 export const MAX_BOUND_PROMPT_BYTES = 64 * 1024
 
+/** One named and ordered section of a prompt bundle. */
 export interface PromptBundleSection {
   readonly id: string
   readonly order: number
   readonly text: string
 }
 
+/** One versioned, data-only prompt definition. */
 export interface PromptBundle {
   readonly apiVersion: 'dsh.deepseek.ai/v1'
   readonly kind: 'PromptBundle'
@@ -27,17 +32,20 @@ export interface PromptBundle {
   readonly texts?: Readonly<Record<string, string>>
 }
 
+/** An exact catalog identity. */
 export interface PromptBundleRef {
   readonly id: string
   readonly version: string
 }
 
+/** A registered bundle with its source and canonical digest. */
 export interface PromptCatalogEntry {
   readonly bundle: PromptBundle
   readonly digest: `sha256:${string}`
   readonly source: string
 }
 
+/** An immutable result of resolving a bundle and binding its variables. */
 export interface BoundPromptBundle {
   readonly ref: PromptBundleRef
   readonly digest: `sha256:${string}`
@@ -51,7 +59,10 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
-/** Stable JSON form used for content identity. */
+/** Stable JSON form used for content identity.
+ * @param value - input whose object keys are sorted recursively.
+ * @returns the canonical JSON string.
+ */
 export function canonicalJson(value: unknown): string {
   const canonical = (item: unknown): unknown => {
     if (Array.isArray(item)) return item.map(canonical)
@@ -63,7 +74,10 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonical(value))
 }
 
-/** Validate and detach a bundle before it enters the catalog. */
+/** Validate and detach a bundle before it enters the catalog.
+ * @param value - candidate definition.
+ * @returns the validated immutable bundle.
+ */
 export function validatePromptBundle(value: PromptBundle): PromptBundle {
   if (value.apiVersion !== 'dsh.deepseek.ai/v1' || value.kind !== 'PromptBundle') {
     throw new Error('prompt bundle must use apiVersion dsh.deepseek.ai/v1 and kind PromptBundle')
@@ -132,7 +146,13 @@ export class PromptCatalog extends Service {
     super(ctx, 'promptCatalog')
   }
 
-  register(input: PromptBundle, source = 'inline'): () => void {
+  /**
+   * Register an immutable prompt bundle before startup sealing.
+   * @param input - Value to register.
+   * @param source - Origin of the registration.
+   * @returns Disposer that removes this registration.
+   */
+  register(input: PromptBundle, source: string = 'inline'): () => void {
     if (this.sealed) throw new Error('prompt catalog is sealed')
     const bundle = validatePromptBundle(input)
     const key = this.key(bundle.metadata)
@@ -148,17 +168,32 @@ export class PromptCatalog extends Service {
     }
   }
 
+  /**
+   * Look up the pinned catalog entry.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @returns The registered entry.
+   */
   get(ref: PromptBundleRef): PromptCatalogEntry {
     const entry = this.entries.get(this.key(ref))
     if (entry === undefined) throw new Error(`unknown prompt bundle ${this.key(ref)}`)
     return entry
   }
 
+  /**
+   * List the available prompt bundles.
+   * @returns Catalog entries in stable order.
+   */
   list(): readonly PromptCatalogEntry[] {
     return [...this.entries.values()].sort((left, right) =>
       this.key(left.bundle.metadata).localeCompare(this.key(right.bundle.metadata)))
   }
 
+  /**
+   * Substitute values into a pinned prompt bundle.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @param variables - Values for the bundle placeholders.
+   * @returns Bound text and its source identity.
+   */
   bind(ref: PromptBundleRef, variables: Readonly<Record<string, string>> = {}): BoundPromptBundle {
     const entry = this.get(ref)
     const sections = entry.bundle.sections.map(section => ({ ...section, text: render(section.text, variables) }))
@@ -170,7 +205,14 @@ export class PromptCatalog extends Service {
     return { ref: { ...ref }, digest: entry.digest, sections, texts }
   }
 
+  /**
+   * Close registration for this catalog.
+   */
   seal(): void { this.sealed = true }
+  /**
+   * Report whether registration is closed.
+   * @returns True after sealing.
+   */
   isSealed(): boolean { return this.sealed }
 
   private key(ref: PromptBundleRef): string { return `${ref.id}@${ref.version}` }

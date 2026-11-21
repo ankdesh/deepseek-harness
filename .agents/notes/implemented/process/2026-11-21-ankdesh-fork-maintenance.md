@@ -26,3 +26,13 @@ Review these upstream edits when changing the base:
 - SDK protocol and server changes carry workflow state. The SDK server tests exercise the RPC behavior.
 - Web startup serves the selected runtime with a product-owned UI. The web-app startup test and the assembled web profile check cover startup.
 - Structured subagent output allows parallel calls to the same tool. The structured driver tests cover the output contract. Add a focused check if a sync changes parallel handling.
+
+## First upstream sync
+
+The sync merges `0.2.2-rc.5` and uses a fresh DSH_HOME. The old release owns its V3 data. See the [upgrade guide](../../../../docs/upgrade-guide/v0.2.2-rc.5/ankdesh-fresh-state/guide.md).
+
+- The event-system and native Flow model use V4 producer sources. The native Flow model reads dedicated tool-role result records. The Flow and event runtime tests cover review, wait, resume, and replay.
+- The unified subagent capture helper accepts duplicate parallel output calls. The first valid result remains authoritative. The structured output test covers the duplicate calls.
+- The web runtime bundle owns the startup policy. The workspace fallbacks still use one new-Session handler. Deployment policy can constrain the locale list and hide the locale selector without removing the saved preference. The web startup and Client tests cover these paths.
+- The browser Flow controls use the regular remote contract. The LiveShare policy classifies all six endpoints as owner-only.
+- The upstream settings and agent preset packages changed names. The unarchive settings entry moved into General settings. Product profiles must use the current packages and mount the selected tool executor.

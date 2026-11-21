@@ -1,6 +1,6 @@
 /** Serializable flow definitions and execution records. */
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
-import type { JsonSchemaNode, ObjectJsonSchema } from '@deepseek-ai/dsh-tools/types'
+import type { JsonSchemaNode, ObjectJsonSchema } from '@deepseek-ai/dsh-tools/json-schema'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { Branded } from '@deepseek-ai/dsh-brand'
 

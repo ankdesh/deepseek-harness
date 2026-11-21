@@ -1,6 +1,61 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/workflow/event-system/README.md
-README.md: 9b2b88a9d4db62acae5a2b69fc936107ccf729e2
-README.zh.md: 8e314d2b9296cc161561578b99913d0a51031dd5
+/:
+  en: 4889fdd7fcda2cfd
+  zh: 6d5b5de208ab4ee5
+/deepseek-ai-dsh-event-system:
+  en: 7c597a74547af525
+  zh: b507203012712a2f
+/deepseek-ai-dsh-event-system/summary:
+  en: e178c6a35d5a1a2e
+  zh: 82e954cbbd60bc08
+/deepseek-ai-dsh-event-system/table-of-contents:
+  en: 65663b0d5dfa1600
+  zh: 827f31198d3cbc04
+/deepseek-ai-dsh-event-system/use-this-package:
+  en: 56f5136c5613fbbc
+  zh: 2d3178e174b734b9
+/deepseek-ai-dsh-event-system/understand-the-implementation:
+  en: aa8ed46269377de1
+  zh: 6202e8da36a6bdbe
+/deepseek-ai-dsh-event-system/further-exploration:
+  en: da323841b3814012
+  zh: cab8210d23903eba
+/deepseek-ai-dsh-event-system/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-event-system/model-experience/pinned-member-instructions:
+  en: 1fa9833c8ae7a858
+  zh: 3d8f8eb7e5346f82
+/deepseek-ai-dsh-event-system/model-experience/pinned-member-instructions/what-the-model-sees:
+  en: 3cf01087fb4ad5a7
+  zh: 8be17dcb2678dc80
+/deepseek-ai-dsh-event-system/model-experience/pinned-member-instructions/what-the-model-sees/generic-primary-instruction:
+  en: 36af4834d5ee6b9e
+  zh: 346b44fa2dc815f6
+/deepseek-ai-dsh-event-system/model-experience/pinned-member-instructions/token-effect:
+  en: e5dd235784471558
+  zh: f2ebe8a9afc751ef
+/deepseek-ai-dsh-event-system/model-experience/pinned-member-instructions/kv-cache-effect:
+  en: ac3edbe53983ebbd
+  zh: f491b9962d7ad28e
+/deepseek-ai-dsh-event-system/model-experience/event-publications-and-deliveries:
+  en: 54129bb4b087fbd8
+  zh: ab3443c84c4775c5
+/deepseek-ai-dsh-event-system/model-experience/event-publications-and-deliveries/what-the-model-sees:
+  en: e62df1e6e6ae1e4c
+  zh: 19d0376a3f03c728
+/deepseek-ai-dsh-event-system/model-experience/event-publications-and-deliveries/token-effect:
+  en: b86626dad7a7b1a7
+  zh: 13b9d6806b1d6cc9
+/deepseek-ai-dsh-event-system/model-experience/event-publications-and-deliveries/kv-cache-effect:
+  en: 1725871383958407
+  zh: b60970386de0c4d7
+/deepseek-ai-dsh-event-system/known-limitations-and-deferred-work:
+  en: c64d5a08d9d75cd1
+  zh: 974f1e4eca0bf090
+/deepseek-ai-dsh-event-system/known-limitations-and-deferred-work/dev-note:
+  en: d4a66234ef8a91f9
+  zh: 9fe490208d886824

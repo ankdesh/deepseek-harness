@@ -13,11 +13,11 @@
     644,
     756
   ],
-  "columnTransition": "grid-template-columns",
+  "columnTransition": "all",
   "expanded": true,
   "mode": "push",
   "panelContentWidth": 756,
-  "panelOuterWidth": 757,
+  "panelOuterWidth": 756,
   "coversViewport": false,
   "resizeHandleWidth": 8,
   "expandedDirectories": [],
@@ -64,8 +64,8 @@
   "columnTransition": "none",
   "expanded": true,
   "mode": "fullscreen",
-  "panelContentWidth": 1680,
-  "panelOuterWidth": 1680,
+  "panelContentWidth": 1681,
+  "panelOuterWidth": 1681,
   "coversViewport": true,
   "resizeHandleWidth": 0,
   "expandedDirectories": [],
@@ -157,7 +157,7 @@
     1400,
     0
   ],
-  "columnTransition": "grid-template-columns",
+  "columnTransition": "all",
   "expanded": false,
   "mode": "push",
   "panelContentWidth": 0,
@@ -197,8 +197,8 @@
   "columnTransition": "none",
   "expanded": true,
   "mode": "fullscreen",
-  "panelContentWidth": 1680,
-  "panelOuterWidth": 1680,
+  "panelContentWidth": 1681,
+  "panelOuterWidth": 1681,
   "coversViewport": true,
   "resizeHandleWidth": 0,
   "expandedDirectories": [],
@@ -229,7 +229,7 @@
 }
 ```
 
-## B restored: normal mode and Files directory state
+## B restored: normal mode and expanded Files directory
 
 ```json
 {
@@ -242,11 +242,11 @@
     644,
     756
   ],
-  "columnTransition": "grid-template-columns",
+  "columnTransition": "all",
   "expanded": true,
   "mode": "push",
   "panelContentWidth": 756,
-  "panelOuterWidth": 757,
+  "panelOuterWidth": 756,
   "coversViewport": false,
   "resizeHandleWidth": 8,
   "expandedDirectories": [
@@ -279,11 +279,11 @@
     644,
     756
   ],
-  "columnTransition": "grid-template-columns",
+  "columnTransition": "all",
   "expanded": true,
   "mode": "push",
   "panelContentWidth": 756,
-  "panelOuterWidth": 757,
+  "panelOuterWidth": 756,
   "coversViewport": false,
   "resizeHandleWidth": 8,
   "expandedDirectories": [],
@@ -327,7 +327,7 @@
     604,
     0
   ],
-  "columnTransition": "grid-template-columns",
+  "columnTransition": "all",
   "expanded": false,
   "mode": "push",
   "panelContentWidth": 0,
@@ -375,7 +375,7 @@
     1260,
     0
   ],
-  "columnTransition": "grid-template-columns",
+  "columnTransition": "all",
   "expanded": false,
   "mode": "push",
   "panelContentWidth": 0,
@@ -419,15 +419,15 @@
     1000
   ],
   "columns": [
-    56,
-    711,
+    0,
+    767,
     0
   ],
   "columnTransition": "none",
   "expanded": true,
   "mode": "fullscreen",
-  "panelContentWidth": 767,
-  "panelOuterWidth": 767,
+  "panelContentWidth": 768,
+  "panelOuterWidth": 768,
   "coversViewport": true,
   "resizeHandleWidth": 0,
   "expandedDirectories": [],
@@ -471,7 +471,7 @@
     1260,
     0
   ],
-  "columnTransition": "grid-template-columns",
+  "columnTransition": "all",
   "expanded": false,
   "mode": "push",
   "panelContentWidth": 0,

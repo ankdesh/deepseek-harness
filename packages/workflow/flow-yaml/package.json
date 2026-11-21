@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-flow-yaml",
   "description": "Developer-authored flow definitions and pinned instructions",
-  "version": "0.1.6-alpha.1",
+  "version": "0.2.2-rc.5",
   "publishConfig": {
     "access": "public"
   },
@@ -28,18 +28,21 @@
     "lib/index.js",
     "lib/example.js",
     "examples",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-flow": "workspace:^",
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-flow": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-flow": "workspace:^",
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-flow": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "dependencies": {
     "yaml": "^2.8.3"

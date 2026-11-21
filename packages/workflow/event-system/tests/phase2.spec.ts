@@ -136,10 +136,15 @@ describe('approved HTTP observations', () => {
     expect(ctx.eventSystems.get(other.agent.id)?.events).toHaveLength(0)
     const current = ctx.eventHttpSources.list(primary.agent.id)[0]
     if (!current) throw new Error('Missing source')
-    await ctx.eventHttpSources.control(primary.agent.id, entry.id, current.revision, false)
-    const after = http.reads
-    await new Promise(resolve => setTimeout(resolve, 80))
-    expect(http.reads).toBe(after)
+    const dispatch = vi.spyOn(globalThis, 'fetch')
+    try {
+      await ctx.eventHttpSources.control(primary.agent.id, entry.id, current.revision, false)
+      const after = dispatch.mock.calls.length
+      await new Promise(resolve => setTimeout(resolve, 80))
+      expect(dispatch).toHaveBeenCalledTimes(after)
+    } finally {
+      dispatch.mockRestore()
+    }
   })
   it('detects a cursor acknowledgement without a committed event and removes its observation on disposal', async () => {
     const { ctx, primary, http, httpInvariant } = await composed()
@@ -278,7 +283,7 @@ describe('durable waiting and replay policy', () => {
         return
       }
       const answered = ctx.eventSystems.get(primary.agent.id)?.waits?.some(wait => wait.state === 'resolved')
-      if (!waited || (answered && current?.phase === 'active' && options.messages.at(-1)?.source.kind === 'goal')) {
+      if (!waited || (answered && current?.phase === 'active' && options.messages.at(-1)?.source?.kind === 'goal')) {
         waited = true
         const call =
           answered && current

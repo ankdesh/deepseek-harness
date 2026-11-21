@@ -41,6 +41,11 @@ const spec = defineDomain({
   tables: { systems: domainTable<SessionId, EventSystemSnapshot>(snapshotSchema) },
 })
 
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'event-system': { kind: 'event-system'; form: 'relay' }
+  }
+}
 declare module '@deepseek-ai/cordis' {
   interface Context {
     eventSystems: EventSystemService
@@ -724,7 +729,7 @@ export default class EventSystemService extends Service {
               text: JSON.stringify({ event, activation_id: delivery.activationId, subscription: delivery.subscription }),
             },
           ],
-          source: { kind: 'plugin', plugin: 'event-system', form: 'relay' },
+          source: { kind: 'event-system', form: 'relay' },
         })
         const message = freezeMessage({ ...input, id: delivery.messageId })
         if (

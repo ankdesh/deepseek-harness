@@ -1,0 +1,16 @@
+# Bilingual-pair consistency record for guide.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/upgrade-guide/v0.2.2-rc.5/ankdesh-fresh-state/guide.md
+/:
+  en: 15b7405d4ee39733
+  zh: 1ca0804c96e77217
+/use-a-new-state-directory-for-ankdesh-dsh:
+  en: a5cff586b5a29477
+  zh: c2f43098b78f6faa
+/use-a-new-state-directory-for-ankdesh-dsh/change:
+  en: d17774cb00d12ccf
+  zh: ec985282e4be4d64
+/use-a-new-state-directory-for-ankdesh-dsh/migration:
+  en: f3186947e226fba6
+  zh: e8e37348bcb75126

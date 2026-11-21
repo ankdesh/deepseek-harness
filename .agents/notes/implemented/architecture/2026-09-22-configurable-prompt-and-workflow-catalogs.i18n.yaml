@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-22-configurable-prompt-and-workflow-catalogs.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-22-configurable-prompt-and-workflow-catalogs.md
-2026-09-22-configurable-prompt-and-workflow-catalogs.md: 026f52a5493401eb22000ed53f193f1e5d6b4c64
-2026-09-22-configurable-prompt-and-workflow-catalogs.zh.md: 7ec18e516406167d98837c25b35211a9e6150361
+/agent-note-separate-workflow-presets-from-service-adapters:
+  en: 6587b0bf521854b8
+  zh: e583e5ec88fa186e
+/agent-note-separate-workflow-presets-from-service-adapters/problem:
+  en: c855f5d4cd21ef7a
+  zh: e903d544693fc88e
+/agent-note-separate-workflow-presets-from-service-adapters/decision:
+  en: 786330c7b05d84bf
+  zh: 6a6a7e87aeb52028
+/agent-note-separate-workflow-presets-from-service-adapters/alternatives-considered:
+  en: 2a9caf3221271d1c
+  zh: 1c7af9b93ffa4df8
+/agent-note-separate-workflow-presets-from-service-adapters/consequences:
+  en: 8b5d3b72adb0741a
+  zh: cc8e8d11723d4db1

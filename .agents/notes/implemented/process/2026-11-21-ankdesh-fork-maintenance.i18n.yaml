@@ -1,2 +1,22 @@
-2026-11-21-ankdesh-fork-maintenance.md: a442b52fd3826952f27aa87266ccda01b260a436
-2026-11-21-ankdesh-fork-maintenance.zh.md: 689e98baf65aa7af23542703f6da3d43bab35417
+# Bilingual-pair consistency record for 2026-11-21-ankdesh-fork-maintenance.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-11-21-ankdesh-fork-maintenance.md
+/agent-note-ankdesh-dsh-fork-maintenance:
+  en: 5074c6c20ad76435
+  zh: 96ec40e865bc97bc
+/agent-note-ankdesh-dsh-fork-maintenance/problem:
+  en: 75c0792959dc85ad
+  zh: c31d19541a101f45
+/agent-note-ankdesh-dsh-fork-maintenance/decision:
+  en: aa4e92f6d140a6b4
+  zh: fa320a5276c7c0ce
+/agent-note-ankdesh-dsh-fork-maintenance/alternatives-considered:
+  en: fb1bc52b8ed4304f
+  zh: b4613f38569131d6
+/agent-note-ankdesh-dsh-fork-maintenance/consequences:
+  en: 6ddae8044eb8d1de
+  zh: 0f36df9c705b7903
+/agent-note-ankdesh-dsh-fork-maintenance/first-upstream-sync:
+  en: a3814ce2c433e84e
+  zh: 64facf31b7327fb1

@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-10-29-selected-product-packages.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/process/2026-10-29-selected-product-packages.md
-2026-10-29-selected-product-packages.md: 92af05620960f3385a4d8454c712ca35f7c83aa4
-2026-10-29-selected-product-packages.zh.md: e76e6ef85925ee90c00be384a18dd0bc4674716f
+/agent-note-selected-product-package-releases:
+  en: 5b16e5f87936c6a4
+  zh: 8f506dc00bb2e079
+/agent-note-selected-product-package-releases/problem:
+  en: 136b9723d96e8909
+  zh: 9946d0b3849166c7
+/agent-note-selected-product-package-releases/proposal:
+  en: 3741516b5f8cb51a
+  zh: 69942e8b3cd977d7
+/agent-note-selected-product-package-releases/alternatives-considered:
+  en: f3e6ae2f4d10fd21
+  zh: c7f203e502ef2a53
+/agent-note-selected-product-package-releases/acceptance-criteria:
+  en: b1a0ea4e643ddd80
+  zh: 0eb78fea0d2f17fc
+/agent-note-selected-product-package-releases/risks:
+  en: a467e8916a623b52
+  zh: 2319730839e98ea9

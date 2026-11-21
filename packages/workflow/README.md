@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use the workflow group for either deployment-owned durable workflows or model-authored orchestration. `s-workflow` keeps versioned definitions, budgets, drafts, and human decisions in full Session snapshots; its restricted tools report progress without lifecycle authority. The separate `workflow` and `ralph` tools retain scripted fan-out and fixed fresh-agent loops.
+The workflow group lets an agent run orchestration scripts that delegate work to subagents and return a final value. The `workflow` tool supports scripted fan-out. Scripts use the shared PTC Node process runtime under the calling Session's file policy. Workflow hooks and child lifecycle remain owned by the workflow engine.
 
 ## Table of Contents
 
@@ -24,35 +24,21 @@ Use the workflow group for either deployment-owned durable workflows or model-au
 
 | Package | Role | ctx key |
 |---|---|---|
-| [`event-system`](event-system/README.md) | Persistent conversation-local event agents and aggregate host budgets | `ctx.eventSystems` |
-| [`event-system-yaml`](event-system-yaml/README.md) | Trusted YAML rosters/subscriptions with Markdown prompts | `ctx.eventSystemsYaml` |
-| [`event-system-http`](event-system-http/README.md) | Approved HTTP conditions with durable cursors and debounce | `ctx.eventHttpSources` |
-| [`flow`](flow/README.md) | Reusable flow definitions, execution or consumers | flow |
-| [`flow-runtime`](flow-runtime/README.md) | Reusable flow definitions, execution or consumers | `ctx.flows` |
-| [`flow-yaml`](flow-yaml/README.md) | Reusable flow definitions, execution or consumers | flow |
-| [`flow-model-native`](flow-model-native/README.md) | Reusable flow definitions, execution or consumers | flow |
-| [`tool-flow`](tool-flow/README.md) | Reusable flow definitions, execution or consumers | flow |
 | [`workflow`](workflow/README.md) | Runs a model-written orchestration script that fans out subagents | `ctx.workflowEngine` |
 | [`workflow-ptc`](workflow-ptc/README.md) | Runs workflow scripts through the shared sandboxed PTC Node process runtime | registers on `ctx.workflowEngine` |
 | [`tool-workflow`](tool-workflow/README.md) | Gives the model the `workflow` tool for scripted multi-agent orchestration | registers on `ctx.tools` |
-| [`tool-ralph`](tool-ralph/README.md) | Gives the model the `ralph` tool for fresh-agent iterative loops | registers on `ctx.tools` |
-| [`s-workflow`](s-workflow/README.md) | Runs durable, catalog-defined, human-governed workflow state | `ctx.sWorkflow` |
-| [`s-workflow-yaml`](s-workflow-yaml/README.md) | Loads strict no-code workflow and service-adapter YAML | `ctx.sWorkflowYaml` |
-| [`tool-s-workflow`](tool-s-workflow/README.md) | Gives the model restricted workflow progress and review-request tools | registers on `ctx.tools` |
 
 -----
 
 <a id="related-documentation"></a>
 ## Related documentation
 
-- [Reusable flows](../../docs/subsystems/flows.md) — definitions, recovery, native phases and limits.
 - [Workflow subsystem](../../docs/subsystems/workflow.md) — the seam's types, start request, and `workflow/*` events.
 - [Generated tool catalog](../../docs/tool-catalog.md#deepseek-aidsh-tool-workflow) — the `workflow` tool schema the model receives.
 - [Generated tool catalog](../../docs/tool-catalog.md#deepseek-aidsh-tool-ralph) — the `ralph` tool schema the model receives.
-- [Generated tool catalog](../../docs/tool-catalog.md#deepseek-aidsh-tool-s-workflow) — the restricted durable-workflow schemas the model receives.
 - [Generated configuration catalog](../../docs/config-catalog.md#deepseek-aidsh-workflow-ptc) — every accepted engine config field.
-- [Dynamic workflows Agent Note](../../.agents/notes/implemented/feature/2026-07-05-dynamic-workflows.md) — the seam design and its decisions.
-- [Harness-level goal-based execution Agent Note](../../.agents/notes/implemented/feature/2026-07-16-harness-level-loop.md) — the fixed fresh-agent loop design and deferred work.
+- [historical Dynamic workflows Agent Note](../../.agents/notes/archived/feature/2026-07-05-dynamic-workflows.md) — the seam design and its decisions.
+- [Harness-level goal-based execution reference](../experimental/tool-ralph/README.md) — the fixed fresh-agent loop design and deferred work.
 
 -----
 
