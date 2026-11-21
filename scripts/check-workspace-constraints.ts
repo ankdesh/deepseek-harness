@@ -186,7 +186,7 @@ export function readWorkspaceManifests(repositoryRoot: string): WorkspaceManifes
 
 const packageFileExtras: Readonly<Record<string, readonly string[]>> = {
   // Tools entry points share error classes and invocation stages through runtime chunks.
-  '@deepseek-ai/dsh-tools': ['lib/pipeline.js', 'lib/shared-*.js'],
+  '@deepseek-ai/dsh-tools': ['lib/pipeline.js', 'lib/json-schema.js', 'lib/shared-*.js'],
   '@deepseek-ai/dsh-tool-executor-ptc': ['lib/run-code.js', 'lib/_chunks/*.js'],
   // The embedded OAR implementation retains its upstream license.
   '@deepseek-ai/dsh-experimental-subagent-oar': ['LICENSE-OAR'],
@@ -264,7 +264,7 @@ const packageFileExtras: Readonly<Record<string, readonly string[]>> = {
   // resolve at install time, before the build produces lib/bin.js.
   '@deepseek-ai/dsh-experimental-webworker-packer': ['bin.js', 'lib/repository-*.js'],
   // Startup and runtime share the advertised URL parser.
-  '@deepseek-ai/dsh-web-app': ['lib/public-url-*.js'],
+  '@deepseek-ai/dsh-web-runtime': ['lib/public-url-*.js'],
   // The headless entry and its startup row share the JSON projection code
   // through a hashed tsdown chunk; both import it by relative path.
   '@deepseek-ai/dsh-headless': ['lib/json-stream-*.js'],
@@ -610,6 +610,10 @@ export function checkWorkspaceManifest({ dir, manifest }: WorkspaceManifest): st
     if (manifest.name === '@deepseek-ai/dsh-tools'
       && !hasExportPair(manifest, './pipeline', './lib/types/pipeline.d.ts', './lib/pipeline.js')) {
       errors.push(`${label}: exports["./pipeline"] must expose lib/types/pipeline.d.ts and lib/pipeline.js`)
+    }
+    if (manifest.name === '@deepseek-ai/dsh-tools'
+      && !hasExportPair(manifest, './json-schema', './lib/types/json-schema.d.ts', './lib/json-schema.js')) {
+      errors.push(`${label}: exports["./json-schema"] must expose lib/types/json-schema.d.ts and lib/json-schema.js`)
     }
     if (manifest.name === '@deepseek-ai/dsh-tool-executor-ptc'
       && !hasExportPair(manifest, './run-code', './lib/types/run-code.d.ts', './lib/run-code.js')) {

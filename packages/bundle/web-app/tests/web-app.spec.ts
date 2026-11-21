@@ -117,7 +117,7 @@ describe('web-app runtime glue', () => {
 
   it('provides the explicit authorities used by existing product connection rows', () => {
     const ctx = context()
-    apply(ctx, new Config({ printUrl: false, openBrowser: false, trustedHosts: ['app.internal:8443'] }))
+    apply(ctx, new Config({ printUrl: false, openBrowser: false, surfaceContext: false, trustedHosts: ['app.internal:8443'] }))
     expect(ctx.webRuntime.trustedHosts).toEqual(['app.internal:8443'])
   })
 

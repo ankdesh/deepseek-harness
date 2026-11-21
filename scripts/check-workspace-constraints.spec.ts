@@ -351,7 +351,7 @@ describe('package payload constraints', () => {
     const dir = 'packages/core/tools'
     const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
     expect(checkWorkspaceManifest({ dir, manifest })).toEqual([])
-    for (const omitted of ['lib/pipeline.js', 'lib/shared-*.js']) {
+    for (const omitted of ['lib/pipeline.js', 'lib/json-schema.js', 'lib/shared-*.js']) {
       expect(checkWorkspaceManifest({ dir, manifest: {
         ...manifest, files: manifest.files!.filter(file => file !== omitted),
       } })).toEqual([expect.stringContaining('package.json files must be')])
