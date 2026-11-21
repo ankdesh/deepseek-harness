@@ -12,7 +12,7 @@ The fork, upstream, and the first consumer can change on different schedules. Bo
 
 The [fork constitution](../../../ankdesh/constitution.md) gives both agents the same rules and keeps fork policy in a directory owned by the fork. The root instruction file carries one link. The [release procedure](../../../ankdesh/release.md) keeps tested archives and publication evidence in a private repository.
 
-The framework recipe owns the published package roots. The pinned spec2gds application checks the selected packages through its named profiles. An application dependency outside the selected package set fails candidate verification.
+The framework recipe owns the published package roots. The pinned spec2gds application checks the selected packages through its named profiles. An application dependency outside the selected package set fails candidate verification. The candidate registry reads metadata from the archive so renamed packages can be verified without the staging directory.
 
 ## Alternatives considered
 
