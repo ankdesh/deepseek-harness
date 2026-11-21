@@ -1,5 +1,7 @@
 # AGENTS.md
 
+Before each task, read the [ankdesh-dsh constitution](.agents/ankdesh/constitution.md) and the nested AGENTS.md files that apply to the files you will edit.
+
 DeepSeek Harness is an all-plugin Cordis agent harness. Read [docs/architecture.md](docs/architecture.md) before changing `packages/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
 ## Pre-stable APIs and released Session data

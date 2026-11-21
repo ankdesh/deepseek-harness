@@ -4,7 +4,7 @@ import {openSync, closeSync, mkdtempSync, rmSync, cpSync, existsSync, globSync, 
 import {dirname, join, resolve, relative} from 'node:path';
 import {builtinModules} from 'node:module';
 import {spawn} from 'node:child_process';
-import {productRoots} from './consumer-manifest.mjs';
+import {candidateManifest, productRoots} from './consumer-manifest.mjs';
 async function capture(command,args,options={}) {
   const temporary=mkdtempSync(join(dirname(output),'TEMP_package_release-'));
   const stdout=join(temporary,'stdout'),stderr=join(temporary,'stderr');
@@ -36,19 +36,17 @@ const CUSTOM_AGENTIC_SUFFIXES = [
   'product-tools',
   'web-runtime',
 ];
-function rescope(text) {
-  let result = text;
-  for (const s of CUSTOM_AGENTIC_SUFFIXES) {
-    result = result.replaceAll(`@deepseek-ai/dsh-${s}`, `@ankdesh/ankdesh-${s}`);
-    result = result.replaceAll(`@ankdesh/dsh-${s}`, `@ankdesh/ankdesh-${s}`);
+function releaseName(name) {
+  if (!name.startsWith('@deepseek-ai/')) return name;
+  const suffix = name.slice('@deepseek-ai/dsh-'.length);
+  if (name.startsWith('@deepseek-ai/dsh-') && CUSTOM_AGENTIC_SUFFIXES.includes(suffix)) {
+    return `@ankdesh/ankdesh-${suffix}`;
   }
-  return result.replaceAll('@deepseek-ai/', '@ankdesh/');
+  return name.replace('@deepseek-ai/', '@ankdesh/');
 }
-function sourceName(name) {
-  for (const s of CUSTOM_AGENTIC_SUFFIXES) {
-    if (name === `@ankdesh/ankdesh-${s}`) return `@deepseek-ai/dsh-${s}`;
-  }
-  return name.replace('@ankdesh/', '@deepseek-ai/');
+
+function rescope(text) {
+  return text.replace(/@deepseek-ai\/[a-z0-9][a-z0-9._-]*/g, releaseName);
 }
 const packageName = name => name.startsWith('@') ? name.split('/').slice(0,2).join('/') : name.split('/')[0];
 const {values} = parseArgs({options:{product:{type:'string'},out:{type:'string'},suffix:{type:'string',default:'ankdesh.1'},source:{type:'string'},'stock-cli':{type:'boolean',default:false},'allow-dirty':{type:'boolean',default:false}}});
@@ -63,6 +61,10 @@ for (const pattern of ['packages/*/*/package.json','tools/*/package.json','vendo
   for (const file of globSync(pattern,{cwd:root})) {const directory=dirname(join(root,file));const manifest=json(join(root,file));index.set(manifest.name,{directory,manifest});}
 }
 const versions = new Map([...index].map(([name,{manifest}])=>[name, `${manifest.version.split('-')[0]}-${values.suffix}`]));
+const sourceNames = new Map([...index.keys()].map(name => [releaseName(name), name]));
+const framework = json(join(root, 'scripts/package-release/framework-packages.json'));
+if (!/^[0-9a-f]{40}$/.test(framework.upstreamCommit)) throw new Error('Expected an exact upstream commit.');
+await capture('git', ['merge-base', '--is-ancestor', framework.upstreamCommit, 'HEAD'], {cwd: root});
 const selected = new Map(), reasons = new Map();
 function importedPackages(directory) {
   const names = new Set();
@@ -76,7 +78,9 @@ function importedPackages(directory) {
   return names;
 }
 function add(name, reason) {
-  name=sourceName(packageName(name));if (!index.has(name)) return;
+  name=packageName(name);
+  name=sourceNames.get(name) ?? name;
+  if (!index.has(name)) return;
   if (!reasons.has(name)) reasons.set(name,new Set());reasons.get(name).add(reason);
   if (selected.has(name)) return;
   const source=index.get(name);const manifest=structuredClone(source.manifest);
@@ -93,16 +97,20 @@ function add(name, reason) {
   }
   for (const child of manifest.dsh?.client?.inject||[]) add(child, `${rescope(name)}: browser injection`);
 }
-const recipe=json(join(product,'harness.product.json'));
-const profileRoots={},profileDependencies={};
-for (const [name,profile] of Object.entries(recipe.profiles)) {
-  const manifests=profile.localBundles.map(local=>json(join(product,local,'package.json')));
-  const dependencies=productRoots(manifests,new Map([...versions].map(([n,v])=>[rescope(n),v])));
-  const roots=Object.keys(dependencies);
-  profileDependencies[name]=dependencies;
-  profileRoots[name]=roots;for (const dep of roots) add(dep,`profile ${name}`);
+for (const name of framework.roots) {
+  if (!sourceNames.has(name)) throw new Error(`Unknown framework package: ${name}`);
+  add(name, 'framework recipe');
 }
-for (const name of Object.keys(json(join(product,'package.json')).devDependencies || {})) if (name.startsWith('@ankdesh/')) add(name,'development checks');
+const selectedVersions = new Map([...selected.keys()].map(name => [releaseName(name), versions.get(name)]));
+const recipe = json(join(product, 'harness.product.json'));
+const profileRoots = {}, profileDependencies = {};
+for (const [name, profile] of Object.entries(recipe.profiles)) {
+  const manifests = profile.localBundles.map(local => json(join(product, local, 'package.json')));
+  const dependencies = productRoots(manifests, selectedVersions);
+  profileDependencies[name] = dependencies;
+  profileRoots[name] = Object.keys(dependencies);
+}
+candidateManifest(json(join(product, 'package.json')), selectedVersions);
 mkdirSync(join(output,'packages'),{recursive:true});mkdirSync(join(output,'stage'),{recursive:true});
 const packages=[];
 async function packNode([name,node]) {
@@ -140,7 +148,7 @@ async function packNode([name,node]) {
     manifest[section]=Object.fromEntries(Object.entries(manifest[section]).map(([key,value])=>[rescope(key),typeof value==='string'&&index.has(key)?versions.get(key):value]));
   }
   delete manifest.private;delete manifest.devDependencies;delete manifest.scripts;
-  manifest.repository={type:'git',url:'git+https://github.com/ankdesh/deepseek-harness.git'};
+  manifest.repository={type:'git',url:'git+https://github.com/ankdesh/ankdesh-dsh-release.git'};
   manifest.publishConfig={registry:'https://npm.pkg.github.com'};
   if(manifest.exports)for(const key of Object.keys(manifest.exports))if(key.startsWith('./src'))delete manifest.exports[key];
   // All text entry points, declarations, config metadata, and dynamic native names use one scope.
@@ -162,7 +170,7 @@ await Promise.all(Array.from({length:4},async()=>{while(pending.length)await pac
 packages.sort((a,b)=>a.name.localeCompare(b.name));
 const profiles={};
 for(const [name,roots] of Object.entries(profileRoots)) {
-  const seen=new Set();const visit=n=>{if(seen.has(n))return;const p=packages.find(p=>p.name===n);if(!p)return;seen.add(n);const src=selected.get(sourceName(n)).manifest;for(const section of ['dependencies','peerDependencies','optionalDependencies'])for(const dep of Object.keys(src[section]||{})){if(section==='peerDependencies'&&src.peerDependenciesMeta?.[dep]?.optional)continue;visit(rescope(dep));}};
+  const seen=new Set();const visit=n=>{if(seen.has(n))return;const p=packages.find(p=>p.name===n);if(!p)return;seen.add(n);const src=selected.get(sourceNames.get(n)).manifest;for(const section of ['dependencies','peerDependencies','optionalDependencies'])for(const dep of Object.keys(src[section]||{})){if(section==='peerDependencies'&&src.peerDependenciesMeta?.[dep]?.optional)continue;visit(rescope(dep));}};
   roots.forEach(visit);const chosen=packages.filter(p=>seen.has(p.name));
   profiles[name]={roots:profileDependencies[name],packageCount:chosen.length,directCount:roots.length,downloadBytes:chosen.reduce((s,p)=>s+p.downloadBytes,0),installedBytes:chosen.reduce((s,p)=>s+p.installedBytes,0),browserBytes:chosen.reduce((s,p)=>s+p.browserBytes,0),packages:chosen.map(p=>p.name)};
   if(!values['stock-cli']&&name.endsWith('headless')&&chosen.some(p=>p.name.includes('dsh-client')||p.name==='@ankdesh/dsh-web-frontend'))throw new Error('Headless profile contains browser packages');
@@ -171,6 +179,6 @@ const sourceCommit=(await capture('git',['rev-parse','HEAD'],{cwd:root,encoding:
 const consumerCommit=(await capture('git',['rev-parse','HEAD'],{cwd:product,encoding:'utf8'})).trim();
 const consumerDirty=Boolean((await capture('git',['status','--porcelain'],{cwd:product,encoding:'utf8'})).trim());
 if(consumerDirty&&!values['allow-dirty'])throw new Error('Release packing requires a clean consumer checkout.');
-const manifest={schemaVersion:1,releaseId:versions.get('@deepseek-ai/dsh'),sourceCommit,sourceDirty:!!dirty,consumerCommit,consumerDirty,measurementOnly:!!values['stock-cli'],platform:'linux',arch:'x64',libc:'glibc',packages,profiles,measurementScope:'Harness archives only; external dependencies are measured by clean consumer verification'};
+const manifest={schemaVersion:1,releaseId:versions.get('@deepseek-ai/dsh'),sourceCommit,upstreamCommit:framework.upstreamCommit,sourceDirty:!!dirty,consumerCommit,consumerDirty,measurementOnly:!!values['stock-cli'],platform:'linux',arch:'x64',libc:'glibc',packages,profiles,measurementScope:'Harness archives only; external dependencies are measured by clean consumer verification'};
 const bytes=JSON.stringify(manifest,null,2)+'\n';writeFileSync(join(output,'release-manifest.json'),bytes);writeFileSync(join(output,'release-manifest.sha256'),digest(bytes)+'\n');
 console.log(JSON.stringify({packages:packages.length,profiles:Object.fromEntries(Object.entries(profiles).map(([n,p])=>[n,{packageCount:p.packageCount,directCount:p.directCount,downloadBytes:p.downloadBytes,installedBytes:p.installedBytes,browserBytes:p.browserBytes}])),manifestSha256:digest(bytes)}));

@@ -35,12 +35,17 @@ test('publishing supplies an explicit prerelease tag and creates a receipt after
  const state=path.join(root,'published');
  if(args[0]==='view'){
   if(!fs.existsSync(state)){console.error('E404');process.exit(1);}
-  const manifest=JSON.parse(fs.readFileSync(path.join(root,'release-manifest.json'),'utf8'));console.log(JSON.stringify(manifest.packages[0].integrity));process.exit(0);
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'release-manifest.json'),'utf8'));console.log(JSON.stringify(process.env.FAKE_REGISTRY_INTEGRITY || manifest.packages[0].integrity));process.exit(0);
  }
  if(args[0]==='publish'&&args.includes('--tag')&&args[args.indexOf('--tag')+1]==='candidate'){fs.writeFileSync(state,'yes');process.exit(0);}
  console.error('Explicit prerelease tag is required');process.exit(1);
  `,{mode:0o755});
  const result=f.run([],{PATH:bin+delimiter+process.env.PATH,NODE_AUTH_TOKEN:'test-only'});assert.equal(result.status,0,result.stderr);
  const receipt=JSON.parse(readFileSync(join(f.root,'promotion.json'),'utf8'));assert.equal(receipt.releaseId,'test');assert.equal(receipt.productionLocks.test['package-lock.json'],digest(readFileSync(join(f.root,'consumer-verification/test/package-lock.json'))));
- const commands=readFileSync(join(f.root,'commands.jsonl'),'utf8').trim().split('\n').map(line=>JSON.parse(line));assert.deepEqual(commands.map(args=>args[0]),['view','publish','view']);
+ const retry=f.run([],{PATH:bin+delimiter+process.env.PATH,NODE_AUTH_TOKEN:'test-only'});
+ assert.equal(retry.status,0,retry.stderr);
+ const conflict=f.run([],{PATH:bin+delimiter+process.env.PATH,NODE_AUTH_TOKEN:'test-only',FAKE_REGISTRY_INTEGRITY:'different'});
+ assert.notEqual(conflict.status,0);
+ assert.match(conflict.stderr,/Registry version conflicts/);
+ const commands=readFileSync(join(f.root,'commands.jsonl'),'utf8').trim().split('\n').map(line=>JSON.parse(line));assert.deepEqual(commands.map(args=>args[0]),['view','publish','view','view','view','view']);
 });

@@ -1,6 +1,6 @@
 /** Publish only verified archive bytes. Promotion follows complete registry verification. */
 import {createHash} from 'node:crypto';
-import {openSync,closeSync,readFileSync,writeFileSync,mkdtempSync,rmSync,mkdirSync,existsSync} from 'node:fs';
+import {openSync,closeSync,writeSync,readFileSync,writeFileSync,mkdtempSync,rmSync,mkdirSync,existsSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {spawn} from 'node:child_process';
 import {parseArgs} from 'node:util';
@@ -53,7 +53,7 @@ for(const [profile,definition]of Object.entries(manifest.profiles)){
   productionLocks[profile][filename]=hash(bytes);consumerFiles.push({profile,filename,bytes});
  }
 }
-if(values['dry-run']){console.log(`Verified ${manifest.packages.length} archives; publication is disabled.`);process.exit(0);}
+if(values['dry-run']){writeSync(process.stdout.fd, `Verified ${manifest.packages.length} archives; publication is disabled.\n`);process.exit(0);}
 if(!process.env.NODE_AUTH_TOKEN)throw new Error('NODE_AUTH_TOKEN with package write permission is required.');
 async function npm(args) {
  const temp=mkdtempSync(join(directory,'TEMP_publish-')),stdout=join(temp,'stdout'),stderr=join(temp,'stderr');
@@ -81,4 +81,4 @@ for(const p of order) {
 const consumerDirectory=join(directory,'consumer-verification');mkdirSync(consumerDirectory,{recursive:true});
 writeFileSync(join(consumerDirectory,'verification.json'),evidenceBytes);
 for(const {profile,filename,bytes}of consumerFiles){mkdirSync(join(consumerDirectory,profile),{recursive:true});writeFileSync(join(consumerDirectory,profile,filename),bytes);}
-writeFileSync(join(directory,'promotion.json'),JSON.stringify({releaseId:manifest.releaseId,sourceCommit:manifest.sourceCommit,releaseManifestSha256:hash(readFileSync(join(directory,'release-manifest.json'))),verificationSha256:hash(evidenceBytes),developmentLock,productionLocks,testReports,testResults:evidence.records},null,2)+'\n');
+writeFileSync(join(directory,'promotion.json'),JSON.stringify({releaseId:manifest.releaseId,sourceCommit:manifest.sourceCommit,upstreamCommit:manifest.upstreamCommit,releaseManifestSha256:hash(readFileSync(join(directory,'release-manifest.json'))),verificationSha256:hash(evidenceBytes),developmentLock,productionLocks,testReports,testResults:evidence.records},null,2)+'\n');
