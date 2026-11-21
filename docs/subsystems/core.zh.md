@@ -855,6 +855,86 @@ Types: [Session](session.zh.md)
 
 Source: [`packages/core/agent/src/index.ts`](../../packages/core/agent/src/index.ts)
 
+<a id="ctxinvariants--invariantregistry"></a>
+
+### `ctx.invariants` — `InvariantRegistry`
+
+Package-owned invariant registry with global and regex-based selection.
+
+```ts cordis-catalog
+/**
+ * Register one package's invariant installer. The package name is reserved
+ * even when filtering disables its checks. Enabled installers run in a child
+ * fiber; failure disposes that fiber and releases the reservation.
+ * @param packageName - full npm package name that owns the contribution.
+ * @param installer - listener or startup-check installer for the child context.
+ * @returns an effect-scoped disposer for the registration.
+ */
+register(packageName: string, installer: InvariantInstaller): () => void
+```
+
+Types: [InvariantInstaller](../testing.zh.md)
+
+Source: [`packages/runtime-diagnostics/invariants/src/index.ts`](../../packages/runtime-diagnostics/invariants/src/index.ts)
+
+<a id="ctxpromptcatalog--promptcatalog"></a>
+
+### `ctx.promptCatalog` — `PromptCatalog`
+
+Immutable after startup sealing; registrations remain effect-owned for teardown.
+
+```ts cordis-catalog
+/**
+ * Register an immutable prompt bundle before startup sealing.
+ * @param input - Value to register.
+ * @param source - Origin of the registration.
+ * @returns Disposer that removes this registration.
+ */
+register(input: PromptBundle, source: string = 'inline'): () => void
+
+/**
+ * Look up the pinned catalog entry.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns The registered entry.
+ */
+get(ref: PromptBundleRef): PromptCatalogEntry
+
+/**
+ * List the available prompt bundles.
+ * @returns Catalog entries in stable order.
+ */
+list(): readonly PromptCatalogEntry[]
+
+/**
+ * Substitute values into a pinned prompt bundle.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param variables - Values for the bundle placeholders.
+ * @returns Bound text and its source identity.
+ */
+bind(ref: PromptBundleRef, variables: Readonly<Record<string, string>> = {}): BoundPromptBundle
+
+/**
+ * Close registration for this catalog.
+ */
+seal(): void
+
+/**
+ * Report whether registration is closed.
+ * @returns True after sealing.
+ */
+isSealed(): boolean
+```
+
+Source: [`packages/core/prompt-catalog/src/index.ts`](../../packages/core/prompt-catalog/src/index.ts)
+
+<a id="ctxpromptcatalogyaml--promptcatalogyamlprovider"></a>
+
+### `ctx.promptCatalogYaml` — `PromptCatalogYamlProvider`
+
+Startup barrier proving every configured prompt bundle is registered.
+
+Source: [`packages/core/prompt-catalog-yaml/src/index.ts`](../../packages/core/prompt-catalog-yaml/src/index.ts)
+
 <a id="agent-events"></a>
 
 ### `agent/*` events

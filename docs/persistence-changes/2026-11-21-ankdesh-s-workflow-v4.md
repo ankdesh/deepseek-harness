@@ -9,7 +9,7 @@ English | [中文](2026-11-21-ankdesh-s-workflow-v4.zh.md)
 
 ## Summary
 
-Record S-Workflow state in fresh V4 Sessions.
+Record S-Workflow state and the event-system and native Flow model message sources in fresh V4 Sessions.
 
 ## Table of Contents
 
@@ -51,12 +51,12 @@ changes:
 <a id="compatibility"></a>
 ## Compatibility
 
-The S-Workflow event is required to reconstruct workflow state. A V4 reader without this event rejects it before execution. The upgrade uses a fresh data directory and leaves old fork V3 records with their original runtime.
+The S-Workflow event is required to reconstruct workflow state. The message sources distinguish event relays from private Flow model notices. Use a fresh data directory for this release. Read old fork V3 records with the old runtime.
 
 <a id="verification"></a>
 ## Verification
 
-The persistence checker compares the generated event inventory with the recorded schema.
+The persistence checker compares the generated event inventory with the recorded schema. The S-Workflow, event-system replay, and native Flow model tests cover the affected writers and readers.
 
 <a id="dev-note"></a>
 ## Dev Note

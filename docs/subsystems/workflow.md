@@ -146,6 +146,349 @@ The record protocol allows one start per run, positive unique member sequences, 
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxeventhttpsources--httpsourceservice"></a>
+
+### `ctx.eventHttpSources` — `HttpSourceService`
+
+Owns read-only network requests, cursor storage, and the publication outbox.
+
+```ts cordis-catalog
+/**
+ * Read source configuration, cursors, errors, and enabled state for one conversation.
+ * @param id - owning conversation.
+ * @returns committed source records, with credential values excluded.
+ */
+list(id: SessionId): HttpSourceRecord[]
+
+/**
+ * Register one immutable human-approved source; the first unchanged observation is a baseline.
+ * @param id - owning conversation; routing is pinned to its declared event subscriptions.
+ * @param input - explicit URL, condition, and traffic settings.
+ * @returns committed source identity and initial cursor.
+ */
+async add(id: SessionId, input: HttpSourceInput): Promise<HttpSourceRecord>
+
+/**
+ * Human enable/disable with the observed source revision; enabling retains cursors and outboxes.
+ * @param conversationId - exact owning conversation.
+ * @param id - source identity.
+ * @param revision - observed source revision.
+ * @param enabled - human polling authority.
+ * @returns committed source state.
+ */
+async control( conversationId: SessionId, id: HttpSourceId, revision: number, enabled: boolean, ): Promise<HttpSourceRecord>
+```
+
+Types: [SessionId](core.md)
+
+Source: [`packages/workflow/event-system-http/src/index.ts`](../../packages/workflow/event-system-http/src/index.ts)
+
+<a id="ctxeventsystems--eventsystemservice"></a>
+
+### `ctx.eventSystems` — `EventSystemService`
+
+Owns specialists and scheduling; the primary native agent remains owned by its caller.
+
+```ts cordis-catalog
+/**
+ * Register an exact trusted template; the returned disposer removes only this contribution.
+ * @param input - trusted resolved definition.
+ * @returns disposer for this exact registration.
+ */
+registerDefinition(input: EventSystemDefinition): () => void
+
+/**
+ * Resolve an exact template version; missing configuration fails before conversation execution.
+ * @param id - catalog identity.
+ * @param version - exact catalog version.
+ * @returns registered immutable definition.
+ */
+definition(id: string, version: string): EventSystemDefinition
+
+/** Prevent new catalog registrations after trusted startup composition. */
+seal(): void
+
+/**
+ * Locate a member by native session identity; routing never accepts another conversation.
+ * @param sessionId - native member identity.
+ * @returns owning conversation and role, if configured.
+ */
+membership(sessionId: SessionId): EventSystemMembership | undefined
+
+/**
+ * Read committed state.
+ * @param id - primary conversation identity.
+ * @returns committed pinned state, if configured.
+ */
+get(id: SessionId): EventSystemSnapshot | undefined
+
+/**
+ * Pin a new conversation or attach to its existing configuration without rearming recovered state.
+ * @param primary - caller-owned native primary agent.
+ * @param mode - immutable conversation execution mode.
+ * @param definition - resolved trusted roster and subscriptions.
+ * @param limits - explicit aggregate resource bounds.
+ * @returns existing or newly pinned conversation state.
+ */
+async attach( primary: Agent, mode: EventSystemSnapshot['mode'], definition: EventSystemDefinition, limits: ExecutionLimits, ): Promise<EventSystemSnapshot>
+
+/**
+ * Publish on behalf of the exact live calling member; producer and causal identity are host-owned.
+ * @param agent - exact live initiator.
+ * @param type - declared permitted event type.
+ * @param payload - JSON payload validated against the event schema.
+ * @param dedupeKey - stable producer key for the same result.
+ * @returns durably committed event identity.
+ */
+async publishAgent(agent: Agent, type: string, payload: JsonValue, dedupeKey: string): Promise<EventId>
+
+/**
+ * Admit a trusted application/user event after payload validation and before scheduling.
+ * @param id - primary conversation identity.
+ * @param input - trusted validated publication request.
+ * @param revision - optional exact human-observed revision.
+ * @returns durably committed event identity.
+ */
+async publishHost(id: SessionId, input: PublishEventInput, revision?: number): Promise<EventId>
+
+/**
+ * Pause new admissions while letting the current tool result settle, for host review gates.
+ * @param id - primary conversation identity.
+ * @param reason - visible host review reason.
+ * @returns committed state without cancelling the current tool.
+ */
+async hold(id: SessionId, reason: string): Promise<EventSystemSnapshot>
+
+/**
+ * Human lifecycle mutation using the exact observed revision; Resume preserves all spending.
+ * @param id - primary conversation identity.
+ * @param revision - exact observed revision.
+ * @param action - human-authorized lifecycle change.
+ * @returns committed state after scheduling or quiescence.
+ */
+async control(id: SessionId, revision: number, action: 'pause' | 'resume' | 'stop'): Promise<EventSystemSnapshot>
+
+/**
+ * Explicitly retry uncertain work; the caller must acknowledge possible prior effects.
+ * @param id - primary conversation identity.
+ * @param revision - exact observed revision.
+ * @param deliveryId - failed or interrupted attempt identity.
+ * @param acknowledgeUncertainty - explicit human acknowledgement of possible prior effects.
+ * @returns committed state retaining the previous attempt.
+ */
+async retry( id: SessionId, revision: number, deliveryId: DeliveryId, acknowledgeUncertainty: boolean, ): Promise<EventSystemSnapshot>
+
+/**
+ * List persisted conversations for trusted source adapters.
+ * @returns all pinned conversation snapshots.
+ */
+list(): EventSystemSnapshot[]
+
+/**
+ * Publish a source observation only while the owning conversation has active authority.
+ * @param id - owning conversation.
+ * @param input - validated source outbox item.
+ * @returns durable event identity for idempotent source acknowledgement.
+ */
+async publishTrigger(id: SessionId, input: PublishEventInput): Promise<EventId>
+
+/**
+ * Persist a future correlated wait and disarm native goal continuation without spending rounds.
+ * @param agent - exact live member executing the waiting tool.
+ * @param request - declared event or host-human response request.
+ * @returns committed wait with its host-generated response identity.
+ */
+async wait(agent: Agent, request: WaitRequest): Promise<EventWait>
+
+/**
+ * Answer one exact human wait; stale answers cannot wake another activation.
+ * @param id - owning conversation.
+ * @param revision - observed execution revision.
+ * @param waitId - current human response identity.
+ * @param answer - bounded human answer logged through the native inbox.
+ * @returns durable response event identity.
+ */
+async answerWait(id: SessionId, revision: number, waitId: WaitId, answer: string): Promise<EventId>
+
+/** Route a trusted host phase's spending to its existing primary conversation.
+ * @param agent - Exact live phase conversation.
+ * @param conversationId - Existing primary budget identity.
+ * @returns Scoped registration disposer.
+ */
+routeRequestBudget(agent: Agent, conversationId: SessionId): () => void
+```
+
+Types: [Agent](core.md) · [SessionId](core.md)
+
+Source: [`packages/workflow/event-system/src/index.ts`](../../packages/workflow/event-system/src/index.ts)
+
+<a id="ctxeventsystemsyaml--eventsystemyamlprovider"></a>
+
+### `ctx.eventSystemsYaml` — `EventSystemYamlProvider`
+
+Register startup templates and release all registrations on disposal.
+
+Source: [`packages/workflow/event-system-yaml/src/index.ts`](../../packages/workflow/event-system-yaml/src/index.ts)
+
+<a id="ctxsworkflow--sworkflowservice"></a>
+
+### `ctx.sWorkflow` — `SWorkflowService`
+
+Sealed catalogs and state-machine owner.
+
+```ts cordis-catalog
+/**
+ * Register an immutable workflow definition before sealing.
+ * @param input - Value to register.
+ * @param source - Origin of the registration.
+ * @returns Disposer that removes this registration.
+ */
+registerDefinition(input: SWorkflowDefinition, source: string = 'inline'): () => void
+
+/**
+ * Register an immutable service adapter before sealing.
+ * @param input - Value to register.
+ * @param source - Origin of the registration.
+ * @returns Disposer that removes this registration.
+ */
+registerAdapter(input: SWorkflowServiceAdapter, source: string = 'inline'): () => void
+
+/**
+ * Close registration for this catalog.
+ */
+seal(): void
+
+/**
+ * Report whether registration is closed.
+ * @returns True after sealing.
+ */
+isSealed(): boolean
+
+/**
+ * List available workflow definitions and service adapters.
+ * @param service - Optional service filter.
+ * @param preset - Optional caller preset filter.
+ * @returns Matching catalog entries.
+ */
+catalog(service?: string, preset?: SWorkflowPreset): { definitions: readonly SWorkflowCatalogEntry<SWorkflowDefinition>[] adapters: readonly SWorkflowCatalogEntry<SWorkflowServiceAdapter>[] }
+
+/**
+ * Read the current Session workflow projection.
+ * @param agent - Agent that owns the Session.
+ * @returns Projected workflow state.
+ */
+get(agent: Agent): SWorkflowProjection
+
+/**
+ * Start a run in the active Agent Session.
+ * @param agent - Agent that owns the Session.
+ * @param request - Definition, adapter, and limits for this run.
+ * @returns Snapshot of the new run.
+ */
+start(agent: Agent, request: SWorkflowStartRequest): SWorkflowSnapshot
+
+/**
+ * Replace the draft in an active run.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param draft - Replacement draft value.
+ * @param summary - Short description of the draft.
+ * @returns Snapshot with the updated draft.
+ */
+updateDraft(agent: Agent, ref: SWorkflowRunRef, draft: JsonValue, summary: string): SWorkflowSnapshot
+
+/**
+ * Record step progress and resource use.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param stepId - Step that reached the checkpoint.
+ * @param note - Checkpoint text.
+ * @param usage - Resources to add to the recorded totals.
+ * @returns Snapshot after the checkpoint.
+ */
+checkpoint(agent: Agent, ref: SWorkflowRunRef, stepId: string, note: string, usage: Partial<SWorkflowUsage> = {}): SWorkflowSnapshot
+
+/**
+ * Pause progress until the owner supplies input.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param prompt - Question to show the owner.
+ * @returns Snapshot with the pending request.
+ */
+requestInput(agent: Agent, ref: SWorkflowRunRef, prompt: string): SWorkflowSnapshot
+
+/**
+ * Ask the owner to review the result.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param prompt - Question to show the owner.
+ * @returns Snapshot with the pending review.
+ */
+requestCompletion(agent: Agent, ref: SWorkflowRunRef, prompt: string): SWorkflowSnapshot
+
+/**
+ * Supply the requested input for the run revision.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param answer - Response from the owner.
+ * @returns Snapshot after accepting the answer.
+ */
+answerInput(agent: Agent, ref: SWorkflowRunRef, answer: string): SWorkflowSnapshot
+
+/**
+ * Approve the pending completion review.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns Snapshot after approval.
+ */
+approveCompletion(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot
+
+/**
+ * Pause the current run revision.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns Snapshot of the paused run.
+ */
+pause(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot
+
+/**
+ * Resume a paused run.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns Snapshot of the resumed run.
+ */
+resume(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot
+
+/**
+ * Cancel the current run revision.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @returns Snapshot of the cancelled run.
+ */
+cancel(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot
+
+/**
+ * Raise the limits for the current run revision.
+ * @param agent - Agent that owns the Session.
+ * @param ref - Pinned identity and, for a run, expected revision.
+ * @param patch - Limits to increase.
+ * @returns Snapshot with the revised limits.
+ */
+raiseBudgets(agent: Agent, ref: SWorkflowRunRef, patch: Partial<SWorkflowBudget>): SWorkflowSnapshot
+```
+
+Types: [Agent](core.md)
+
+Source: [`packages/workflow/s-workflow/src/index.ts`](../../packages/workflow/s-workflow/src/index.ts)
+
+<a id="ctxsworkflowyaml--sworkflowyamlprovider"></a>
+
+### `ctx.sWorkflowYaml` — `SWorkflowYamlProvider`
+
+Startup barrier proving every configured workflow document is registered.
+
+Source: [`packages/workflow/s-workflow-yaml/src/index.ts`](../../packages/workflow/s-workflow-yaml/src/index.ts)
+
 <a id="ctxworkflowengine--workflowengine-abstract-seam"></a>
 
 ### `ctx.workflowEngine` — `WorkflowEngine` (abstract seam)

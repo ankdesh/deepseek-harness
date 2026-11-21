@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Before each task, read the [ankdesh-dsh constitution](.agents/ankdesh/constitution.md) and the nested AGENTS.md files that apply to the files you will edit.
+At task start, read the [fork constitution](.agents/ankdesh/constitution.md) and applicable nested AGENTS.md files.
 
 DeepSeek Harness is an all-plugin Cordis agent harness. Read [docs/architecture.md](docs/architecture.md) before changing `packages/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
@@ -112,7 +112,7 @@ make web|dev-web|desktop|dev-desktop|build  # the same commands; ARGS='--no-open
 
 ### Host sandbox failures
 
-If a required `gh`, `pnpm`, build, test, or generator command fails because the sandbox blocks credentials, network, IPC, watching, or nested `sandbox-exec`, retry unchanged with the narrowest host escalation. Require sandbox evidence; never bypass test failures or the product sandbox.
+When sandbox evidence shows a blocked command, retry it unchanged with the narrowest host escalation. Do not bypass test failures or the product sandbox.
 
 ### Run relevant checks locally
 

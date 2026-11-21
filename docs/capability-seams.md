@@ -7,6 +7,33 @@ A service can be a core spine service, a swappable capability seam, a bundle/com
 
 ```mermaid
 flowchart LR
+  pkg_event_system_http["event-system-http"]
+  svc_eventHttpSources["ctx.eventHttpSources<br/>HTTP event sources"]
+  pkg_event_system["event-system"]
+  svc_eventSystems["ctx.eventSystems<br/>Session event systems"]
+  pkg_event_system_yaml["event-system-yaml"]
+  svc_eventSystemsYaml["ctx.eventSystemsYaml<br/>Event system configuration"]
+  pkg_invariants["invariants"]
+  svc_invariants["ctx.invariants<br/>Runtime invariants"]
+  pkg_prompt_catalog["prompt-catalog"]
+  svc_promptCatalog["ctx.promptCatalog<br/>Prompt catalog"]
+  pkg_prompt_catalog_yaml["prompt-catalog-yaml"]
+  svc_promptCatalogYaml["ctx.promptCatalogYaml<br/>Prompt catalog configuration"]
+  pkg_s_workflow["s-workflow"]
+  svc_sWorkflow["ctx.sWorkflow<br/>Session workflows"]
+  pkg_s_workflow_yaml["s-workflow-yaml"]
+  svc_sWorkflowYaml["ctx.sWorkflowYaml<br/>Session workflow configuration"]
+  pkg_flow["flow"]
+  svc_flows["ctx.flows<br/>Reusable flow execution"]
+  pkg_flow_runtime["flow-runtime"]
+  pkg_flow_yaml["flow-yaml"]
+  pkg_flow_model_native["flow-model-native"]
+  pkg_tool_flow["tool-flow"]
+  pkg_sdk_jsonrpc_server["sdk-jsonrpc-server"]
+  svc_flowYaml["ctx.flowYaml<br/>Developer flow definitions"]
+  svc_flowController["ctx.flowController<br/>Remote flow controls"]
+  pkg_client_ui_flow["client-ui-flow"]
+  pkg_api_remotes["api-remotes"]
   pkg_action_cards["action-cards"]
   svc_actionCards["ctx.actionCards<br/>Optional action cards"]
   pkg_creation_recommendations["creation-recommendations"]
@@ -61,7 +88,6 @@ flowchart LR
   pkg_tool_bash["tool-bash"]
   pkg_tool_pwsh["tool-pwsh"]
   pkg_subagent["subagent"]
-  pkg_sdk_jsonrpc_server["sdk-jsonrpc-server"]
   pkg_sandbox_policy["sandbox-policy"]
   pkg_api_workspace_files["api-workspace-files"]
   pkg_api_terminal_controller["api-terminal-controller"]
@@ -391,6 +417,9 @@ flowchart LR
   pkg_deepseek_auth --> svc_deepseekAuth
   pkg_deepseek_chat_import --> svc_deepseekChatImport
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
+  pkg_event_system --> svc_eventSystems
+  pkg_event_system_http --> svc_eventHttpSources
+  pkg_event_system_yaml --> svc_eventSystemsYaml
   pkg_experimental_api_speech_to_text --> svc_speechController
   pkg_experimental_browser_use_chrome_devtools_mcp --> svc_browserUse
   pkg_experimental_browser_use_playwright_mcp --> svc_browserUse
@@ -410,6 +439,10 @@ flowchart LR
   pkg_experimental_worktree --> svc_worktrees
   pkg_file_reference --> svc_fileReferences
   pkg_file_reference_local --> svc_fileReferences
+  pkg_flow --> svc_flows
+  pkg_flow_runtime --> svc_flowController
+  pkg_flow_runtime --> svc_flows
+  pkg_flow_yaml --> svc_flowYaml
   pkg_forge_gitlab --> svc_forge
   pkg_fs --> svc_fs
   pkg_fs_local --> svc_fs
@@ -426,6 +459,7 @@ flowchart LR
   pkg_host_product_telemetry_otel --> svc_productTelemetry
   pkg_host_webserver --> svc_webServer
   pkg_inspector --> svc_inspector
+  pkg_invariants --> svc_invariants
   pkg_jobs --> svc_jobs
   pkg_jobs_local --> svc_jobs
   pkg_llm --> svc_llm
@@ -448,9 +482,13 @@ flowchart LR
   pkg_plugin_market --> svc_pluginMarket
   pkg_plugin_package_inventory_deepseek --> svc_deepseekLlmApiExtensions
   pkg_plugin_recommendations --> svc_pluginRecommendations
+  pkg_prompt_catalog --> svc_promptCatalog
+  pkg_prompt_catalog_yaml --> svc_promptCatalogYaml
   pkg_ptc_runtime --> svc_ptcRuntime
   pkg_ptc_runtime_node --> svc_ptcRuntime
   pkg_pwsh_local --> svc_shell
+  pkg_s_workflow --> svc_sWorkflow
+  pkg_s_workflow_yaml --> svc_sWorkflowYaml
   pkg_sandbox --> svc_sandbox
   pkg_sandbox_local --> svc_sandbox
   pkg_sandbox_policy --> svc_sandboxPolicy
@@ -565,6 +603,13 @@ flowchart LR
   svc_dynamicCordisRunner --> pkg_tool_cordis
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
+  svc_flowController --> pkg_api_remotes
+  svc_flowController --> pkg_client_ui_flow
+  svc_flowYaml --> pkg_tool_flow
+  svc_flows --> pkg_flow_model_native
+  svc_flows --> pkg_flow_yaml
+  svc_flows --> pkg_sdk_jsonrpc_server
+  svc_flows --> pkg_tool_flow
   svc_forge --> pkg_experimental_client_ui_forge
   svc_forge --> pkg_experimental_forge_session
   svc_forgeSession --> pkg_experimental_client_ui_forge
@@ -703,6 +748,17 @@ flowchart LR
 
 | ctx key | Role | Owner | Implementations | Direct consumers | Companion plugins | Note |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.eventHttpSources` | `service` | [`event-system-http`](../packages/workflow/event-system-http) | - | - | - | Admits and authenticates HTTP deliveries for registered event systems. |
+| `ctx.eventSystems` | `service` | [`event-system`](../packages/workflow/event-system) | - | - | - | Owns event routing, delivery and recovery for event-driven agents. |
+| `ctx.eventSystemsYaml` | `service` | [`event-system-yaml`](../packages/workflow/event-system-yaml) | - | - | - | Loads event system definitions from developer YAML. |
+| `ctx.invariants` | `service` | [`invariants`](../packages/runtime-diagnostics/invariants) | - | - | - | Registers scoped checks that detect inconsistent runtime state. |
+| `ctx.promptCatalog` | `service` | [`prompt-catalog`](../packages/core/prompt-catalog) | - | - | - | Registers and resolves named prompt bundles. |
+| `ctx.promptCatalogYaml` | `service` | [`prompt-catalog-yaml`](../packages/core/prompt-catalog-yaml) | - | - | - | Loads named prompt bundles from developer YAML. |
+| `ctx.sWorkflow` | `service` | [`s-workflow`](../packages/workflow/s-workflow) | - | - | - | Owns ordered workflow steps and the Session projection. |
+| `ctx.sWorkflowYaml` | `service` | [`s-workflow-yaml`](../packages/workflow/s-workflow-yaml) | - | - | - | Loads Session workflows from developer YAML. |
+| `ctx.flows` | `seam` | [`flow`](../packages/workflow/flow) | [`flow-runtime`](../packages/workflow/flow-runtime) | [`flow-yaml`](../packages/workflow/flow-yaml), [`flow-model-native`](../packages/workflow/flow-model-native), [`tool-flow`](../packages/workflow/tool-flow), [`sdk-jsonrpc-server`](../packages/sdk/server) | - | Developer definitions pin deterministic operations, typed model phases, waits and shared limits. All consumers use named revision-checked commands. |
+| `ctx.flowYaml` | `core` | [`flow-yaml`](../packages/workflow/flow-yaml) | - | [`tool-flow`](../packages/workflow/tool-flow) | - | Trusted data-only YAML registers definitions and pins contained instruction text without service or model effects. |
+| `ctx.flowController` | `core` | [`flow-runtime`](../packages/workflow/flow-runtime) | - | [`client-ui-flow`](../packages/client/ui-flow), [`api-remotes`](../packages/api/remotes) | - | The browser remote API forwards start, read, control, decisions and trace inspection to the executor. |
 | `ctx.actionCards` | `service` | [`action-cards`](../packages/experimental/action-cards) | - | [`creation-recommendations`](../packages/experimental/creation-recommendations), [`client-ui-action-cards`](../packages/experimental/client-ui-action-cards) | - | Owns card state, user actions and status notices; card kinds register their actions and handlers. |
 | `ctx.pluginRecommendations` | `service` | [`plugin-recommendations`](../packages/experimental/plugin-recommendations) | - | [`client-ui-plugin-recommendations`](../packages/experimental/client-ui-plugin-recommendations) | - | Reads the current catalog text of an official plugin card and enables the plugin through the profile plugin manager after a click. |
 | `ctx.deepseekChatImport` | `service` | [`deepseek-chat-import`](../packages/experimental/deepseek-chat-import) | - | - | - | Serves the owner-only upload route that imports each conversation of a DeepSeek chat export as a Session, and the upload limits the browser checks first. |

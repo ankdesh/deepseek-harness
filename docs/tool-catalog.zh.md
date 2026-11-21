@@ -19,6 +19,7 @@
 
 | 工具包 | 模型可见名称 | 依赖 | 写入／影响 | 随产品发布的别名 | 部署说明 |
 | --- | --- | --- | --- | --- | --- |
+| `@deepseek-ai/dsh-tool-flow` | `get_flow` | `ctx.flows`, `ctx.agents`, `ctx.tools`, `a calling native Agent` | `tool/call`, `tool/result`, `flow execution records and later native phase messages` | - | 读取会话中流程的进度。每个已发布的定义另提供一个启动工具。 |
 | `@deepseek-ai/dsh-plugin-manager` | `plugin_manager` | `ctx.tools`, `ctx.pluginManager`, `ctx.sandboxPolicy` | `tool/call`, `tool/result`, `user/message` | - | - |
 | `@deepseek-ai/dsh-plugin-market` | `plugin_market` | `ctx.tools`, `ctx.pluginMarket` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-mcp-resources` | `list_mcp_resource_templates`, `list_mcp_resources`, `read_mcp_resource` | `ctx.tools`, `ctx.mcpResources` | `tool/call`, `tool/result` | - | - |
@@ -39,6 +40,7 @@
 | `@deepseek-ai/dsh-tool-terminal` | `terminal_close`、`terminal_list`、`terminal_open`、`terminal_read`、`terminal_send`、`terminal_signal` | `ctx.workingDirectory`、`ctx.tools`、`ctx.terminals`、`ctx.systemPrompt`、`ctx.jobs at call time for run_in_background` | `tool/call`、`tool/result` | - | 这 6 个终端工具需要选择启用，用于补充一次性 bash／文件系统工具。`terminal_send(run_in_background: true)` 会注册到 `ctx.jobs`；schema 不包含 TUI、具名按键序列、BEL、调整尺寸、自动启动和跨 agent 共享。 |
 | `@deepseek-ai/dsh-terminal-panel` | `user_terminal_list`、`user_terminal_read` | `ctx.tools`、`ctx.systemPrompt`、`ctx.terminals`、`ctx.terminalController`、`ctx.sandboxPolicy`、`a calling Agent` | `tool/call`、`tool/result` | - | 本包还用 Web 侧栏终端承载 6 个 `terminal_*` 工具。`user_terminal_list` 和 `user_terminal_read` 只读取用户控制的终端；`readUserTerminals: false` 会移除这两个工具。 |
 | `@deepseek-ai/dsh-tool-goal` | `create_goal`、`get_goal`、`update_goal` | `ctx.tools`、`ctx.agents`、`ctx.goals`、`ctx.systemPrompt`、`a calling Agent in an authorized open turn` | `tool/call`、`goal/change for mutations`、`tool/result` | - | create、edit、pause 和 resume 要求直接来自人类的根权限；complete 和 blocked 也接受确切的当前 Goal Round。blocked 的默认下限是 3 个获准的 Round。 |
+| `@deepseek-ai/dsh-tool-s-workflow` | `checkpoint_workflow`, `get_workflow`, `request_workflow_completion`, `request_workflow_input`, `update_workflow_draft` | `ctx.tools`, `ctx.agents`, `ctx.sWorkflow`, `ctx.systemPrompt`, `a calling Agent inside its active driver` | `tool/call`, `s-workflow/change for mutations`, `tool/result` | - | 模型可读取状态、替换待审核草稿、记录用量或请求用户输入和审核。主机控制生命周期、预算、审批、应用和发送。 |
 | `@deepseek-ai/dsh-tool-schedule` | `schedule_create`、`schedule_edit`、`schedule_list`、`schedule_view` | `ctx.tools`、`ctx.schedule`、`ctx.systemPrompt` | `tool/call`、Schedule storage domain 创建、更新或删除、`tool/result` | - | preset 或 Agent scope 挂载本包，并决定哪些 Agent 获得工具。管理工具按 id 跨会话读写 Host 的任务。任务保存 RFC 5545 重复规则，执行位置可选已有会话、首次创建后复用的会话或每次运行新建的会话。委派子 Agent 不能调用这些工具。 |
 | `@deepseek-ai/dsh-tool-lsp` | `lsp` | `ctx.workingDirectory`、`ctx.tools`、`ctx.lsp`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，因此其模型可见 schema 在更换提供方时保持稳定。运行时要求已注册提供方，例如 `@deepseek-ai/dsh-lsp-stdio`；如果没有提供方，查询会返回结构化 `LSP_UNAVAILABLE` 错误，而不会改变 schema。 |
 | `@deepseek-ai/dsh-tool-ralph` | `ralph` | `ctx.tools`、`ctx.workflowEngine`、`ctx.subagents`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents every fresh round)` | `tool/call`、`tool/result`、`workflow and child session events during execution` | - | 固定的前台工作流会在每个 Round 启动一个全新的结构化子级；模型只能选择不可变目标和可选的 Round 上限。 |
@@ -55,6 +57,40 @@
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-workspace-dependencies` | `load_workspace_dependencies` | `ctx.tools` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
+
+<a id="deepseek-aidsh-tool-flow"></a>
+
+## `@deepseek-ai/dsh-tool-flow`
+
+### `get_flow`
+
+读取当前会话中流程的进度。接收启动请求只表示流程已进入待执行状态。人工决策和流程控制由其他接口处理。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "execution_id": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "execution_id"
+  ],
+  "additionalProperties": false
+}
+```
+
+源码：[`packages/workflow/tool-flow/src/index.ts`](../packages/workflow/tool-flow/src/index.ts)
+
+get_flow 读取进度。每个已发布的定义还提供一个命名工具，参数由该定义指定。启动时会确认接收请求并结束发起轮次。流程在日志写入完成后执行。人工控制和决策通过共享执行接口处理。
 
 <a id="deepseek-aidsh-plugin-manager"></a>
 
@@ -1613,6 +1649,161 @@ glob 和 grep 是无条件可用的发现工具，通过 ctx.subprocess spawn �
 来源：[`packages/goal/tool-goal/src/index.ts`](../packages/goal/tool-goal/src/index.ts)
 
 create、edit、pause 和 resume 要求直接来自人类的根权限；complete 和 blocked 也接受确切的当前 Goal Round。blocked 的默认下限是 3 个获准的 Round。
+
+<a id="deepseek-aidsh-tool-s-workflow"></a>
+
+## `@deepseek-ai/dsh-tool-s-workflow`
+
+### `checkpoint_workflow`
+
+持久记录当前工作流修订版本的进度和资源用量。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "number"
+    },
+    "step_id": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string"
+    },
+    "rounds": {
+      "type": "number"
+    },
+    "requests": {
+      "type": "number"
+    },
+    "tokens": {
+      "type": "number"
+    },
+    "active_millis": {
+      "type": "number"
+    },
+    "children": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "run_id",
+    "revision",
+    "step_id",
+    "note"
+  ]
+}
+```
+
+源码：[`packages/workflow/tool-s-workflow/src/index.ts`](../packages/workflow/tool-s-workflow/src/index.ts)
+
+### `get_workflow`
+
+读取当前部署的工作流及其确切修订版本。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+源码：[`packages/workflow/tool-s-workflow/src/index.ts`](../packages/workflow/tool-s-workflow/src/index.ts)
+
+### `request_workflow_completion`
+
+将当前草稿提交给用户审核。草稿在审核期间保持待应用状态。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "number"
+    },
+    "prompt": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "revision",
+    "prompt"
+  ]
+}
+```
+
+源码：[`packages/workflow/tool-s-workflow/src/index.ts`](../packages/workflow/tool-s-workflow/src/index.ts)
+
+### `request_workflow_input`
+
+暂停工作流并请求用户提供一项必需的输入。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "number"
+    },
+    "prompt": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "revision",
+    "prompt"
+  ]
+}
+```
+
+源码：[`packages/workflow/tool-s-workflow/src/index.ts`](../packages/workflow/tool-s-workflow/src/index.ts)
+
+### `update_workflow_draft`
+
+用一个完整的 JSON 值替换待审核的工作流草稿。草稿保持待应用状态。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "number"
+    },
+    "draft_json": {
+      "type": "string",
+      "description": "Complete replacement draft encoded as JSON."
+    },
+    "summary": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "revision",
+    "draft_json",
+    "summary"
+  ]
+}
+```
+
+源码：[`packages/workflow/tool-s-workflow/src/index.ts`](../packages/workflow/tool-s-workflow/src/index.ts)
+
+模型可读取状态、替换待审核草稿、记录用量或请求用户输入和审核。主机控制生命周期、预算、审批、应用和发送。
 
 <a id="deepseek-aidsh-tool-schedule"></a>
 

@@ -671,6 +671,13 @@ register(definition: ToolDefinition, options: ToolRegistrationOptions = {}): () 
 restrict(filter: ToolRestriction): () => void
 
 /**
+ * Limit one scoped phase to the named tools, including its own registrations.
+ * @param names - tools the phase may expose and execute.
+ * @returns The disposer that restores normal admission.
+ */
+restrictPhase(names: readonly string[]): () => void
+
+/**
  * Look up a tool as one scope sees it (scoped
  * shadows global; a restricted-away global reads as absent). Presenters pass
  * the calling agent so the rendered card matches the definition that
@@ -725,6 +732,14 @@ schemas(scope?: ScopeKey, toolSet?: ResolvedToolSet): ToolSchema[]
  * @returns the effect disposer. Unloading leaves the selection unavailable until it is replaced.
  */
 setExecutor(executor: ToolExecutor): () => void
+
+/**
+ * Check whether the selected executor exposes a capability as a direct model call.
+ * @param name - registered capability name.
+ * @param scope - viewing Agent or preset.
+ * @returns Whether the selected executor advertises the given name.
+ */
+isDirectlyCallable(name: string, scope?: ScopeKey): boolean
 
 /**
  * Delegate a raw call batch to its Agent's provider or the deployment default.

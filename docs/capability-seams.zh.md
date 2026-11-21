@@ -9,6 +9,33 @@
 
 ```mermaid
 flowchart LR
+  pkg_event_system_http["event-system-http"]
+  svc_eventHttpSources["ctx.eventHttpSources<br/>HTTP event sources"]
+  pkg_event_system["event-system"]
+  svc_eventSystems["ctx.eventSystems<br/>Session event systems"]
+  pkg_event_system_yaml["event-system-yaml"]
+  svc_eventSystemsYaml["ctx.eventSystemsYaml<br/>Event system configuration"]
+  pkg_invariants["invariants"]
+  svc_invariants["ctx.invariants<br/>Runtime invariants"]
+  pkg_prompt_catalog["prompt-catalog"]
+  svc_promptCatalog["ctx.promptCatalog<br/>Prompt catalog"]
+  pkg_prompt_catalog_yaml["prompt-catalog-yaml"]
+  svc_promptCatalogYaml["ctx.promptCatalogYaml<br/>Prompt catalog configuration"]
+  pkg_s_workflow["s-workflow"]
+  svc_sWorkflow["ctx.sWorkflow<br/>Session workflows"]
+  pkg_s_workflow_yaml["s-workflow-yaml"]
+  svc_sWorkflowYaml["ctx.sWorkflowYaml<br/>Session workflow configuration"]
+  pkg_flow["flow"]
+  svc_flows["ctx.flows<br/>Reusable flow execution"]
+  pkg_flow_runtime["flow-runtime"]
+  pkg_flow_yaml["flow-yaml"]
+  pkg_flow_model_native["flow-model-native"]
+  pkg_tool_flow["tool-flow"]
+  pkg_sdk_jsonrpc_server["sdk-jsonrpc-server"]
+  svc_flowYaml["ctx.flowYaml<br/>Developer flow definitions"]
+  svc_flowController["ctx.flowController<br/>Remote flow controls"]
+  pkg_client_ui_flow["client-ui-flow"]
+  pkg_api_remotes["api-remotes"]
   pkg_action_cards["action-cards"]
   svc_actionCards["ctx.actionCards<br/>Optional action cards"]
   pkg_creation_recommendations["creation-recommendations"]
@@ -63,7 +90,6 @@ flowchart LR
   pkg_tool_bash["tool-bash"]
   pkg_tool_pwsh["tool-pwsh"]
   pkg_subagent["subagent"]
-  pkg_sdk_jsonrpc_server["sdk-jsonrpc-server"]
   pkg_sandbox_policy["sandbox-policy"]
   pkg_api_workspace_files["api-workspace-files"]
   pkg_api_terminal_controller["api-terminal-controller"]
@@ -393,6 +419,9 @@ flowchart LR
   pkg_deepseek_auth --> svc_deepseekAuth
   pkg_deepseek_chat_import --> svc_deepseekChatImport
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
+  pkg_event_system --> svc_eventSystems
+  pkg_event_system_http --> svc_eventHttpSources
+  pkg_event_system_yaml --> svc_eventSystemsYaml
   pkg_experimental_api_speech_to_text --> svc_speechController
   pkg_experimental_browser_use_chrome_devtools_mcp --> svc_browserUse
   pkg_experimental_browser_use_playwright_mcp --> svc_browserUse
@@ -412,6 +441,10 @@ flowchart LR
   pkg_experimental_worktree --> svc_worktrees
   pkg_file_reference --> svc_fileReferences
   pkg_file_reference_local --> svc_fileReferences
+  pkg_flow --> svc_flows
+  pkg_flow_runtime --> svc_flowController
+  pkg_flow_runtime --> svc_flows
+  pkg_flow_yaml --> svc_flowYaml
   pkg_forge_gitlab --> svc_forge
   pkg_fs --> svc_fs
   pkg_fs_local --> svc_fs
@@ -428,6 +461,7 @@ flowchart LR
   pkg_host_product_telemetry_otel --> svc_productTelemetry
   pkg_host_webserver --> svc_webServer
   pkg_inspector --> svc_inspector
+  pkg_invariants --> svc_invariants
   pkg_jobs --> svc_jobs
   pkg_jobs_local --> svc_jobs
   pkg_llm --> svc_llm
@@ -450,9 +484,13 @@ flowchart LR
   pkg_plugin_market --> svc_pluginMarket
   pkg_plugin_package_inventory_deepseek --> svc_deepseekLlmApiExtensions
   pkg_plugin_recommendations --> svc_pluginRecommendations
+  pkg_prompt_catalog --> svc_promptCatalog
+  pkg_prompt_catalog_yaml --> svc_promptCatalogYaml
   pkg_ptc_runtime --> svc_ptcRuntime
   pkg_ptc_runtime_node --> svc_ptcRuntime
   pkg_pwsh_local --> svc_shell
+  pkg_s_workflow --> svc_sWorkflow
+  pkg_s_workflow_yaml --> svc_sWorkflowYaml
   pkg_sandbox --> svc_sandbox
   pkg_sandbox_local --> svc_sandbox
   pkg_sandbox_policy --> svc_sandboxPolicy
@@ -567,6 +605,13 @@ flowchart LR
   svc_dynamicCordisRunner --> pkg_tool_cordis
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
+  svc_flowController --> pkg_api_remotes
+  svc_flowController --> pkg_client_ui_flow
+  svc_flowYaml --> pkg_tool_flow
+  svc_flows --> pkg_flow_model_native
+  svc_flows --> pkg_flow_yaml
+  svc_flows --> pkg_sdk_jsonrpc_server
+  svc_flows --> pkg_tool_flow
   svc_forge --> pkg_experimental_client_ui_forge
   svc_forge --> pkg_experimental_forge_session
   svc_forgeSession --> pkg_experimental_client_ui_forge
@@ -705,6 +750,17 @@ flowchart LR
 
 | ctx 键 | 角色 | 所属包 | 实现 | 直接消费方 | 配套插件 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.eventHttpSources` | `service` | [`event-system-http`](../packages/workflow/event-system-http) | - | - | - | 接收已注册事件系统的 HTTP 请求并验证请求身份。 |
+| `ctx.eventSystems` | `service` | [`event-system`](../packages/workflow/event-system) | - | - | - | 负责事件代理的路由、投递和恢复。 |
+| `ctx.eventSystemsYaml` | `service` | [`event-system-yaml`](../packages/workflow/event-system-yaml) | - | - | - | 从开发者提供的 YAML 加载事件系统定义。 |
+| `ctx.invariants` | `service` | [`invariants`](../packages/runtime-diagnostics/invariants) | - | - | - | 注册作用域检查以检测不一致的运行时状态。 |
+| `ctx.promptCatalog` | `service` | [`prompt-catalog`](../packages/core/prompt-catalog) | - | - | - | 注册并解析命名的提示词包。 |
+| `ctx.promptCatalogYaml` | `service` | [`prompt-catalog-yaml`](../packages/core/prompt-catalog-yaml) | - | - | - | 从开发者提供的 YAML 加载命名提示词包。 |
+| `ctx.sWorkflow` | `service` | [`s-workflow`](../packages/workflow/s-workflow) | - | - | - | 管理有序工作流步骤和会话投影。 |
+| `ctx.sWorkflowYaml` | `service` | [`s-workflow-yaml`](../packages/workflow/s-workflow-yaml) | - | - | - | 从开发者提供的 YAML 加载会话工作流。 |
+| `ctx.flows` | `seam` | [`flow`](../packages/workflow/flow) | [`flow-runtime`](../packages/workflow/flow-runtime) | [`flow-yaml`](../packages/workflow/flow-yaml), [`flow-model-native`](../packages/workflow/flow-model-native), [`tool-flow`](../packages/workflow/tool-flow), [`sdk-jsonrpc-server`](../packages/sdk/server) | - | 开发者定义确定性操作、带类型的模型阶段、等待和共享限制。调用方使用带修订检查的命名命令。 |
+| `ctx.flowYaml` | `core` | [`flow-yaml`](../packages/workflow/flow-yaml) | - | [`tool-flow`](../packages/workflow/tool-flow) | - | 从受信任的纯数据 YAML 注册流程定义和内含指令文本。加载过程没有服务或模型副作用。 |
+| `ctx.flowController` | `core` | [`flow-runtime`](../packages/workflow/flow-runtime) | - | [`client-ui-flow`](../packages/client/ui-flow), [`api-remotes`](../packages/api/remotes) | - | 通过浏览器远程接口转发启动、读取、控制、决策和执行记录查看请求。 |
 | `ctx.actionCards` | `service` | [`action-cards`](../packages/experimental/action-cards) | - | [`creation-recommendations`](../packages/experimental/creation-recommendations), [`client-ui-action-cards`](../packages/experimental/client-ui-action-cards) | - | 负责卡片状态、用户操作和状态通知；各卡片种类注册自己的动作和处理器。 |
 | `ctx.pluginRecommendations` | `service` | [`plugin-recommendations`](../packages/experimental/plugin-recommendations) | - | [`client-ui-plugin-recommendations`](../packages/experimental/client-ui-plugin-recommendations) | - | 读取官方插件卡片的当前目录文本，并在用户点击后通过配置插件管理器启用该插件。 |
 | `ctx.deepseekChatImport` | `service` | [`deepseek-chat-import`](../packages/experimental/deepseek-chat-import) | - | - | - | 提供仅 owner 可用的上传路由，把 DeepSeek 会话导出的每个对话导入为一个会话，并提供浏览器先行检查的上传上限。 |

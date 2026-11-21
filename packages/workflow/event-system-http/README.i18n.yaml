@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/workflow/event-system-http/README.md
-README.md: 8d284a6a9d3a06c55b7991cbf355c0e716d41a24
-README.zh.md: b92943fa0c0d370df81ad7d69598af593761bb7a
+/:
+  en: 1a2a73dc4df3931c
+  zh: e914646d9bf81b54
+/deepseek-ai-dsh-event-system-http:
+  en: c88d14101e13237b
+  zh: e45de0771f4b75d5
+/deepseek-ai-dsh-event-system-http/summary:
+  en: 0c03e330787a85c9
+  zh: dd708f6ec665a27e
+/deepseek-ai-dsh-event-system-http/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: ffab54373e9e61f0
+/deepseek-ai-dsh-event-system-http/use-this-package:
+  en: b6be409a3f967a5b
+  zh: 1c590cabf985411c
+/deepseek-ai-dsh-event-system-http/use-this-package/configuration:
+  en: 954492f2118e5ef4
+  zh: 2a7e29df7518970d
+/deepseek-ai-dsh-event-system-http/understand-the-implementation:
+  en: 42f8751c28a411e8
+  zh: 1d52a40cfc1ba3ce
+/deepseek-ai-dsh-event-system-http/further-exploration:
+  en: fe0667c75521f557
+  zh: 10a23aec092480e2
+/deepseek-ai-dsh-event-system-http/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-event-system-http/model-experience/condition-observations:
+  en: 41f774f7cd421063
+  zh: 1666238e4bf58c16
+/deepseek-ai-dsh-event-system-http/model-experience/condition-observations/what-the-model-sees:
+  en: 7488ff22a19c962c
+  zh: 16454eccbaee50b6
+/deepseek-ai-dsh-event-system-http/model-experience/condition-observations/token-effect:
+  en: 0deaa647ed284cc7
+  zh: 60e686efb325ed9d
+/deepseek-ai-dsh-event-system-http/model-experience/condition-observations/kv-cache-effect:
+  en: 37d7b4d2f9ba3db5
+  zh: 28a063e229eec4d4
+/deepseek-ai-dsh-event-system-http/known-limitations-and-deferred-work:
+  en: 8f9d747325d75036
+  zh: 45de85be05517bc4
+/deepseek-ai-dsh-event-system-http/known-limitations-and-deferred-work/dev-note:
+  en: 0773ec309558dc0e
+  zh: 7b27ad5be28ce5eb

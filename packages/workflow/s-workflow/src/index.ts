@@ -176,7 +176,10 @@ function validateIdentity(value: { id: string; version: string }, where: string)
   if (!ID.test(value.id) || !VERSION.test(value.version)) throw new Error(`${where} identity is invalid`)
 }
 
-/** Validate one definition without accepting executable code. */
+/** Validate one definition without accepting executable code.
+ * @param value - candidate workflow definition.
+ * @returns the validated definition.
+ */
 export function validateSWorkflowDefinition(value: SWorkflowDefinition): SWorkflowDefinition {
   if (value.apiVersion !== 'dsh.deepseek.ai/v1' || value.kind !== 'WorkflowDefinition') {
     throw new Error('workflow definition apiVersion or kind is invalid')
@@ -198,7 +201,10 @@ export function validateSWorkflowDefinition(value: SWorkflowDefinition): SWorkfl
   return { ...value, metadata: { ...value.metadata }, presets: [...value.presets], steps }
 }
 
-/** Validate and detach one service adapter manifest. */
+/** Validate and detach one service adapter manifest.
+ * @param value - candidate adapter manifest.
+ * @returns the validated adapter with detached manifest data.
+ */
 export function validateSWorkflowServiceAdapter(value: SWorkflowServiceAdapter): SWorkflowServiceAdapter {
   if (value.apiVersion !== 'dsh.deepseek.ai/v1' || value.kind !== 'ServiceAdapter') {
     throw new Error('service adapter apiVersion or kind is invalid')
@@ -254,7 +260,11 @@ const changeSchema = zod.object({
   workflow: snapshotSchema,
 }).strict()
 
-/** Pure strict fold used by the projection registry and tests. */
+/** Pure strict fold used by the projection registry and tests.
+ * @param state - workflow state before the event.
+ * @param event - next Session event in replay order.
+ * @returns workflow state after applying the event.
+ */
 export function applySWorkflowProjection(state: SWorkflowProjectionState, event: SessionEvent): SWorkflowProjectionState {
   if (state.failure !== null || event.type !== 's-workflow/change') return state
   try {

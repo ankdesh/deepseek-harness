@@ -20,6 +20,8 @@ const SESSION = 's-test' as SessionId
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
 })
 const unused = (): never => { throw new Error('This isolated component does not consume framework hooks') }
 const standard: GlobalStandardProps & SessionStandardProps = {
@@ -59,12 +61,25 @@ function mountButton(shortcuts: readonly ShortcutCatalogEntry[] = [], mobile = f
 }
 
 describe('ExpandButton', () => {
-  it('advertises the configured expand binding', async () => {
+  it('advertises the configured expand binding', () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(target: Element): void {
+        const size = { inlineSize: 0, blockSize: 0 }
+        this.callback([{ target, borderBoxSize: [size], contentBoxSize: [size],
+          devicePixelContentBoxSize: [size], contentRect: new DOMRect() }], this as ResizeObserver)
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    })
     const { instance, control, view } = mountButton([{ id: 'sidebar.right.toggle' as never, label: 'Toggle', aliases: [],
       binding: null, keys: ['Ctrl', 'B'], aria: 'Control+B', modified: true, conflicts: [], issue: null }], true)
     expect(control()?.getAttribute('aria-keyshortcuts')).toBe('Control+B')
-    fireEvent.pointerEnter(control()!)
-    const tooltip = await view.findByRole('tooltip')
+    fireEvent.pointerEnter(control()!, { pointerType: 'mouse' })
+    act(() => { vi.advanceTimersByTime(500) })
+    const tooltip = view.getByRole('tooltip')
     expect(tooltip.textContent).toContain('chrome.expand')
     expect(Array.from(tooltip.querySelectorAll('kbd'), key => key.textContent)).toEqual(['Ctrl', 'B'])
     act(() => { instance.actions.setExpanded(SESSION, true) })

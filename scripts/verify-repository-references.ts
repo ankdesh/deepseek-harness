@@ -51,7 +51,10 @@ export function findRepositoryReferences(
     if (organizationUrl.test(canonicalReferenceText(line).replace(kitRepositoryUrl, ''))) {
       references.push({ file, line: index + 1, kind: 'organization-url' })
     }
-    if ([...line.matchAll(commitCandidate)].some(match => commits.has(match[0].toLowerCase()))) {
+    // The fork release recipe must pin the accepted upstream source exactly.
+    const isUpstreamPin = file === 'scripts/package-release/framework-packages.json'
+      && /^\s*"upstreamCommit": "[0-9a-f]{40}",?\s*$/.test(line)
+    if (!isUpstreamPin && [...line.matchAll(commitCandidate)].some(match => commits.has(match[0].toLowerCase()))) {
       references.push({ file, line: index + 1, kind: 'commit-hash' })
     }
   }

@@ -9,16 +9,21 @@ import { Context, Service } from '@deepseek-ai/cordis'
 const ID = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/
 const VERSION = /^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?$/
 const PLACEHOLDER = /\{\{\s*([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)\s*\}\}/g
+/** Maximum UTF-8 bytes in an individual prompt text. */
 export const MAX_PROMPT_TEXT_BYTES = 32 * 1024
+/** Maximum UTF-8 bytes in the canonical source bundle. */
 export const MAX_PROMPT_BUNDLE_BYTES = 128 * 1024
+/** Maximum UTF-8 bytes in the bound prompt content. */
 export const MAX_BOUND_PROMPT_BYTES = 64 * 1024
 
+/** One named and ordered section of a prompt bundle. */
 export interface PromptBundleSection {
   readonly id: string
   readonly order: number
   readonly text: string
 }
 
+/** One versioned, data-only prompt definition. */
 export interface PromptBundle {
   readonly apiVersion: 'dsh.deepseek.ai/v1'
   readonly kind: 'PromptBundle'
@@ -27,17 +32,20 @@ export interface PromptBundle {
   readonly texts?: Readonly<Record<string, string>>
 }
 
+/** An exact catalog identity. */
 export interface PromptBundleRef {
   readonly id: string
   readonly version: string
 }
 
+/** A registered bundle with its source and canonical digest. */
 export interface PromptCatalogEntry {
   readonly bundle: PromptBundle
   readonly digest: `sha256:${string}`
   readonly source: string
 }
 
+/** An immutable result of resolving a bundle and binding its variables. */
 export interface BoundPromptBundle {
   readonly ref: PromptBundleRef
   readonly digest: `sha256:${string}`
@@ -51,7 +59,10 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
-/** Stable JSON form used for content identity. */
+/** Stable JSON form used for content identity.
+ * @param value - input whose object keys are sorted recursively.
+ * @returns the canonical JSON string.
+ */
 export function canonicalJson(value: unknown): string {
   const canonical = (item: unknown): unknown => {
     if (Array.isArray(item)) return item.map(canonical)
@@ -63,7 +74,10 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonical(value))
 }
 
-/** Validate and detach a bundle before it enters the catalog. */
+/** Validate and detach a bundle before it enters the catalog.
+ * @param value - candidate definition.
+ * @returns the validated immutable bundle.
+ */
 export function validatePromptBundle(value: PromptBundle): PromptBundle {
   if (value.apiVersion !== 'dsh.deepseek.ai/v1' || value.kind !== 'PromptBundle') {
     throw new Error('prompt bundle must use apiVersion dsh.deepseek.ai/v1 and kind PromptBundle')

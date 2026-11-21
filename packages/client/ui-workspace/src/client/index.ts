@@ -22,7 +22,6 @@ import type {} from '@deepseek-ai/dsh-client-product-analytics/client'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SyncedConfig } from '@deepseek-ai/dsh-client-config/types'
 import type { WorkspaceNavigationConfig } from '../types.ts'
-import z from '@deepseek-ai/schemastery'
 import type { RemoteHostFacts } from '@deepseek-ai/dsh-api-remotes/client'
 import type { ISessions, SessionForkError } from '@deepseek-ai/dsh-api-session-controller/client'
 import type {
@@ -172,7 +171,8 @@ export function apply(ctx: Context, config: SyncedConfig<WorkspaceNavigationConf
   let toastSeq = 0
   const notify = (toast: RowToast): void => { rowToast.set({ ...toast, seq: ++toastSeq }) }
   const uiWorkspace = new UiWorkspaceService(
-    ctx, ctx.remote.directoryPicker, workspaces, sessions, viewInstance.actions, notify, config.recentViewLimit, config?.autoOpenRecent?.get() !== false,
+    ctx, ctx.remote.directoryPicker, workspaces, sessions, viewInstance.actions, notify,
+    config.recentViewLimit, config.autoOpenRecent?.get() !== false,
   )
   ctx.uiSession.registerNewSessionHandler({
     id: 'workspace-default',

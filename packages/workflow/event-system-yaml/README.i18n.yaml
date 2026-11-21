@@ -1,6 +1,46 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/workflow/event-system-yaml/README.md
-README.md: 396f97960a0c7463cd84a85f575a08c03b435493
-README.zh.md: c331f0d166ab759a3cfa28311121357702118ecc
+/:
+  en: 114f0fb716d1726c
+  zh: ae68883ebf8285e6
+/deepseek-ai-dsh-event-system-yaml:
+  en: 85ac24fdfc701cd7
+  zh: 048a062730523924
+/deepseek-ai-dsh-event-system-yaml/summary:
+  en: a2eddd508d57e636
+  zh: 3d4a19a299190a3a
+/deepseek-ai-dsh-event-system-yaml/table-of-contents:
+  en: 65663b0d5dfa1600
+  zh: 827f31198d3cbc04
+/deepseek-ai-dsh-event-system-yaml/use-this-package:
+  en: 3c04aad6aa259237
+  zh: fe709cf9556581ae
+/deepseek-ai-dsh-event-system-yaml/understand-the-implementation:
+  en: 39a7f7bbd19ce888
+  zh: 9c60d37f6dffa245
+/deepseek-ai-dsh-event-system-yaml/further-exploration:
+  en: 2617647ae2c24577
+  zh: 8c8ba183287f0328
+/deepseek-ai-dsh-event-system-yaml/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-event-system-yaml/model-experience/resolved-template-data:
+  en: 08c709f0fdcf6400
+  zh: 6a0ae83ee1180622
+/deepseek-ai-dsh-event-system-yaml/model-experience/resolved-template-data/what-the-model-sees:
+  en: d5a7a4ced10f90b0
+  zh: 5a87333de03c648c
+/deepseek-ai-dsh-event-system-yaml/model-experience/resolved-template-data/token-effect:
+  en: 8a612dbe5f64e7ee
+  zh: 0ccf4ee1db74bbc2
+/deepseek-ai-dsh-event-system-yaml/model-experience/resolved-template-data/kv-cache-effect:
+  en: 0b6087cd0fc27245
+  zh: f63bda44f0ef55f8
+/deepseek-ai-dsh-event-system-yaml/known-limitations-and-deferred-work:
+  en: 8927c43e8947144d
+  zh: 4014b62cc2f7d49d
+/deepseek-ai-dsh-event-system-yaml/known-limitations-and-deferred-work/dev-note:
+  en: bdbdbc1d6b3e5f10
+  zh: b5e97bcaafd6964a

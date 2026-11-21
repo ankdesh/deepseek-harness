@@ -1277,6 +1277,149 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'eventHttpSources',
+    summary: 'Owns read-only network requests, cursor storage, and the publication outbox.',
+    description: 'Owns read-only network requests, cursor storage, and the publication outbox.',
+    methods: [
+      {
+        signature: 'readonly ready: Promise<void>',
+        description: 'Resolves after persisted definitions and cursors are validated.',
+        parameters: [],
+      },
+      {
+        signature: 'list(id: SessionId): HttpSourceRecord[]',
+        description: 'Read source configuration, cursors, errors, and enabled state for one conversation.',
+        parameters: [{ name: 'id', description: 'owning conversation.' }],
+        returns: 'committed source records, with credential values excluded.',
+      },
+      {
+        signature: 'async add(id: SessionId, input: HttpSourceInput): Promise<HttpSourceRecord>',
+        description: 'Register one immutable human-approved source; the first unchanged observation is a baseline.',
+        parameters: [{ name: 'id', description: 'owning conversation; routing is pinned to its declared event subscriptions.' }, { name: 'input', description: 'explicit URL, condition, and traffic settings.' }],
+        returns: 'committed source identity and initial cursor.',
+      },
+      {
+        signature: 'async control( conversationId: SessionId, id: HttpSourceId, revision: number, enabled: boolean, ): Promise<HttpSourceRecord>',
+        description: 'Human enable/disable with the observed source revision; enabling retains cursors and outboxes.',
+        parameters: [{ name: 'conversationId', description: 'exact owning conversation.' }, { name: 'id', description: 'source identity.' }, { name: 'revision', description: 'observed source revision.' }, { name: 'enabled', description: 'human polling authority.' }],
+        returns: 'committed source state.',
+      },
+    ],
+  },
+  {
+    key: 'eventSystems',
+    summary: 'Owns specialists and scheduling; the primary native agent remains owned by its caller.',
+    description: 'Owns specialists and scheduling; the primary native agent remains owned by its caller.',
+    methods: [
+      {
+        signature: 'readonly ready: Promise<void>',
+        description: 'Resolves after domain loading and human-gated restart reconstruction.',
+        parameters: [],
+      },
+      {
+        signature: 'registerDefinition(input: EventSystemDefinition): () => void',
+        description: 'Register an exact trusted template; the returned disposer removes only this contribution.',
+        parameters: [{ name: 'input', description: 'trusted resolved definition.' }],
+        returns: 'disposer for this exact registration.',
+      },
+      {
+        signature: 'definition(id: string, version: string): EventSystemDefinition',
+        description: 'Resolve an exact template version; missing configuration fails before conversation execution.',
+        parameters: [{ name: 'id', description: 'catalog identity.' }, { name: 'version', description: 'exact catalog version.' }],
+        returns: 'registered immutable definition.',
+      },
+      {
+        signature: 'seal(): void',
+        description: 'Prevent new catalog registrations after trusted startup composition.',
+        parameters: [],
+      },
+      {
+        signature: 'membership(sessionId: SessionId): EventSystemMembership | undefined',
+        description: 'Locate a member by native session identity; routing never accepts another conversation.',
+        parameters: [{ name: 'sessionId', description: 'native member identity.' }],
+        returns: 'owning conversation and role, if configured.',
+      },
+      {
+        signature: 'get(id: SessionId): EventSystemSnapshot | undefined',
+        description: 'Read committed state.',
+        parameters: [{ name: 'id', description: 'primary conversation identity.' }],
+        returns: 'committed pinned state, if configured.',
+      },
+      {
+        signature: 'async attach( primary: Agent, mode: EventSystemSnapshot[\'mode\'], definition: EventSystemDefinition, limits: ExecutionLimits, ): Promise<EventSystemSnapshot>',
+        description: 'Pin a new conversation or attach to its existing configuration without rearming recovered state.',
+        parameters: [{ name: 'primary', description: 'caller-owned native primary agent.' }, { name: 'mode', description: 'immutable conversation execution mode.' }, { name: 'definition', description: 'resolved trusted roster and subscriptions.' }, { name: 'limits', description: 'explicit aggregate resource bounds.' }],
+        returns: 'existing or newly pinned conversation state.',
+      },
+      {
+        signature: 'async publishAgent(agent: Agent, type: string, payload: JsonValue, dedupeKey: string): Promise<EventId>',
+        description: 'Publish on behalf of the exact live calling member; producer and causal identity are host-owned.',
+        parameters: [{ name: 'agent', description: 'exact live initiator.' }, { name: 'type', description: 'declared permitted event type.' }, { name: 'payload', description: 'JSON payload validated against the event schema.' }, { name: 'dedupeKey', description: 'stable producer key for the same result.' }],
+        returns: 'durably committed event identity.',
+      },
+      {
+        signature: 'async publishHost(id: SessionId, input: PublishEventInput, revision?: number): Promise<EventId>',
+        description: 'Admit a trusted application/user event after payload validation and before scheduling.',
+        parameters: [{ name: 'id', description: 'primary conversation identity.' }, { name: 'input', description: 'trusted validated publication request.' }, { name: 'revision', description: 'optional exact human-observed revision.' }],
+        returns: 'durably committed event identity.',
+      },
+      {
+        signature: 'async hold(id: SessionId, reason: string): Promise<EventSystemSnapshot>',
+        description: 'Pause new admissions while letting the current tool result settle, for host review gates.',
+        parameters: [{ name: 'id', description: 'primary conversation identity.' }, { name: 'reason', description: 'visible host review reason.' }],
+        returns: 'committed state without cancelling the current tool.',
+      },
+      {
+        signature: 'async control(id: SessionId, revision: number, action: \'pause\' | \'resume\' | \'stop\'): Promise<EventSystemSnapshot>',
+        description: 'Human lifecycle mutation using the exact observed revision; Resume preserves all spending.',
+        parameters: [{ name: 'id', description: 'primary conversation identity.' }, { name: 'revision', description: 'exact observed revision.' }, { name: 'action', description: 'human-authorized lifecycle change.' }],
+        returns: 'committed state after scheduling or quiescence.',
+      },
+      {
+        signature: 'async retry( id: SessionId, revision: number, deliveryId: DeliveryId, acknowledgeUncertainty: boolean, ): Promise<EventSystemSnapshot>',
+        description: 'Explicitly retry uncertain work; the caller must acknowledge possible prior effects.',
+        parameters: [{ name: 'id', description: 'primary conversation identity.' }, { name: 'revision', description: 'exact observed revision.' }, { name: 'deliveryId', description: 'failed or interrupted attempt identity.' }, { name: 'acknowledgeUncertainty', description: 'explicit human acknowledgement of possible prior effects.' }],
+        returns: 'committed state retaining the previous attempt.',
+      },
+      {
+        signature: 'list(): EventSystemSnapshot[]',
+        description: 'List persisted conversations for trusted source adapters.',
+        parameters: [],
+        returns: 'all pinned conversation snapshots.',
+      },
+      {
+        signature: 'async publishTrigger(id: SessionId, input: PublishEventInput): Promise<EventId>',
+        description: 'Publish a source observation only while the owning conversation has active authority.',
+        parameters: [{ name: 'id', description: 'owning conversation.' }, { name: 'input', description: 'validated source outbox item.' }],
+        returns: 'durable event identity for idempotent source acknowledgement.',
+      },
+      {
+        signature: 'async wait(agent: Agent, request: WaitRequest): Promise<EventWait>',
+        description: 'Persist a future correlated wait and disarm native goal continuation without spending rounds.',
+        parameters: [{ name: 'agent', description: 'exact live member executing the waiting tool.' }, { name: 'request', description: 'declared event or host-human response request.' }],
+        returns: 'committed wait with its host-generated response identity.',
+      },
+      {
+        signature: 'async answerWait(id: SessionId, revision: number, waitId: WaitId, answer: string): Promise<EventId>',
+        description: 'Answer one exact human wait; stale answers cannot wake another activation.',
+        parameters: [{ name: 'id', description: 'owning conversation.' }, { name: 'revision', description: 'observed execution revision.' }, { name: 'waitId', description: 'current human response identity.' }, { name: 'answer', description: 'bounded human answer logged through the native inbox.' }],
+        returns: 'durable response event identity.',
+      },
+      {
+        signature: 'routeRequestBudget(agent: Agent, conversationId: SessionId): () => void',
+        description: 'Route a trusted host phase\'s spending to its existing primary conversation.',
+        parameters: [{ name: 'agent', description: 'Exact live phase conversation.' }, { name: 'conversationId', description: 'Existing primary budget identity.' }],
+        returns: 'Scoped registration disposer.',
+      },
+    ],
+  },
+  {
+    key: 'eventSystemsYaml',
+    summary: 'Register startup templates and release all registrations on disposal.',
+    description: 'Register startup templates and release all registrations on disposal.',
+    methods: [],
+  },
+  {
     key: 'fileReferences',
     summary: 'Host capability for cancellable file-reference discovery.',
     description: 'Host capability for cancellable file-reference discovery.',
@@ -1336,6 +1479,161 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'agent', description: 'receiving Agent.' }, { name: 'requestId', description: 'prompt identity carried by the queue occurrence.' }],
       },
     ],
+  },
+  {
+    key: 'flowController',
+    summary: 'Optional Typert consumer; transport callers cannot set execution state.',
+    description: 'Optional Typert consumer; transport callers cannot set execution state.',
+    methods: [
+      {
+        signature: '@Remote(\'start\') async start( agent: Agent, definition: FlowRef, context: string, inputs: JsonValue, requestId: string, ): Promise<FlowSummary>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'definition', description: 'Published pinned version.' }, { name: 'context', description: 'Eligible deployment context.' }, { name: 'inputs', description: 'Typed arguments.' }, { name: 'requestId', description: 'Stable caller identity.' }],
+        returns: 'Accepted execution summary.',
+      },
+      {
+        signature: '@Remote(\'get\') async get(agent: Agent, id: FlowExecutionId): Promise<FlowSummary>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'id', description: 'Execution identity.' }],
+        returns: 'Its current summary.',
+      },
+      {
+        signature: '@Remote(\'list\') async list(agent: Agent): Promise<FlowSummary[]>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller conversation.' }],
+        returns: 'Its recent execution summaries.',
+      },
+      {
+        signature: '@Remote(\'control\') async control( agent: Agent, id: FlowExecutionId, revision: number, command: FlowControl, ): Promise<FlowSummary>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'command', description: 'Human command.' }],
+        returns: 'Committed summary.',
+      },
+      {
+        signature: '@Remote(\'answer\') async answer( agent: Agent, id: FlowExecutionId, revision: number, waitId: string, deliveryId: string, value: JsonValue, ): Promise<FlowSummary>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'waitId', description: 'Exact wait.' }, { name: 'deliveryId', description: 'Stable response.' }, { name: 'value', description: 'Typed response.' }],
+        returns: 'Committed summary.',
+      },
+      {
+        signature: '@Remote(\'trace\') async trace(agent: Agent, id: FlowExecutionId): Promise<JsonValue>',
+        description: 'Use the declared caller and configuration.',
+        parameters: [{ name: 'agent', description: 'Resolved caller.' }, { name: 'id', description: 'Execution.' }],
+        returns: 'Offline trace, without model or service access.',
+      },
+    ],
+  },
+  {
+    key: 'flows',
+    summary: 'Swappable executor; consumers never select arbitrary next states.',
+    description: 'Swappable executor; consumers never select arbitrary next states.',
+    methods: [
+      {
+        signature: 'abstract readonly ready: Promise<void>',
+        description: 'Provider startup and recovery barrier.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract registerDefinition(definition: FlowDefinition): () => void',
+        description: 'Register an immutable developer definition.',
+        parameters: [{ name: 'definition', description: 'Developer-authored definition.' }],
+        returns: 'Registration disposer.',
+      },
+      {
+        signature: 'abstract registerOperation(operation: FlowOperation): () => void',
+        description: 'Register a versioned typed operation.',
+        parameters: [{ name: 'operation', description: 'Registered operation.' }],
+        returns: 'Registration disposer.',
+      },
+      {
+        signature: 'abstract registerModelProvider(provider: FlowModelProvider): () => void',
+        description: 'Register the native model phase provider.',
+        parameters: [{ name: 'provider', description: 'Model phase executor.' }],
+        returns: 'Registration disposer.',
+      },
+      {
+        signature: 'abstract catalog(context: string): readonly FlowDefinition[]',
+        description: 'Read definitions published for the selected caller context.',
+        parameters: [{ name: 'context', description: 'Caller domain context.' }],
+        returns: 'Published exact definitions.',
+      },
+      {
+        signature: 'abstract compile(ref: FlowRef): CompiledFlow',
+        description: 'Validate and pin a definition without external effects.',
+        parameters: [{ name: 'ref', description: 'Exact definition.' }],
+        returns: 'Validated compiled graph.',
+      },
+      {
+        signature: 'abstract start(request: FlowStart): Promise<FlowView>',
+        description: 'Record an authorized execution and return acceptance.',
+        parameters: [{ name: 'request', description: 'Authorized invocation.' }],
+        returns: 'Accepted durable execution.',
+      },
+      {
+        signature: 'abstract get(id: FlowExecutionId, actor: FlowActor): FlowView',
+        description: 'Read an execution in the caller conversation.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'actor', description: 'Derived caller.' }],
+        returns: 'Current authorized state.',
+      },
+      {
+        signature: 'abstract list(actor: FlowActor): readonly FlowView[]',
+        description: 'List recent executions in the caller conversation.',
+        parameters: [{ name: 'actor', description: 'Derived caller.' }],
+        returns: 'Executions in the caller\'s conversations.',
+      },
+      {
+        signature: 'abstract active(session: SessionId): boolean',
+        description: 'Check whether a flow claims this conversation.',
+        parameters: [{ name: 'session', description: 'Participant.' }],
+        returns: 'Whether a nonterminal execution claims it.',
+      },
+      {
+        signature: 'abstract settled(id: FlowExecutionId): Promise<FlowView>',
+        description: 'Await a decision or terminal result.',
+        parameters: [{ name: 'id', description: 'Accepted execution.' }],
+        returns: 'Settles at the first wait or terminal result.',
+      },
+      {
+        signature: 'abstract reserveModelEnvelope(id: FlowExecutionId, operationId: string, tokens: number): Promise<void>',
+        description: 'Reserve actual native request bytes before provider access.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'operationId', description: 'Exact model attempt.' }, { name: 'tokens', description: 'Conservative input/output capacity.' }],
+      },
+      {
+        signature: 'abstract advance(id: FlowExecutionId): void',
+        description: 'Advance an accepted execution after its initiating turn settles.',
+        parameters: [{ name: 'id', description: 'Accepted execution whose initiating turn committed.' }],
+      },
+      {
+        signature: 'abstract control( id: FlowExecutionId, revision: number, command: FlowControl, actor: FlowActor, ): Promise<FlowView>',
+        description: 'Apply a revision-checked human or trusted host control.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'command', description: 'Human command.' }, { name: 'actor', description: 'Caller.' }],
+        returns: 'Committed state.',
+      },
+      {
+        signature: 'abstract answer( id: FlowExecutionId, revision: number, waitId: string, deliveryId: string, value: JsonValue, actor: FlowActor, ): Promise<FlowView>',
+        description: 'Commit the typed response to an exact pending wait.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'waitId', description: 'Exact wait.' }, { name: 'deliveryId', description: 'Stable decision.' }, { name: 'value', description: 'Typed decision.' }, { name: 'actor', description: 'Caller.' }],
+        returns: 'Committed state.',
+      },
+      {
+        signature: 'abstract reportWaitDiagnostic( id: FlowExecutionId, revision: number, waitId: string, message: string | undefined, actor: FlowActor, ): Promise<FlowView>',
+        description: 'Report a correlated wait\'s current diagnostic without changing progress.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'revision', description: 'Observed revision.' }, { name: 'waitId', description: 'Exact wait.' }, { name: 'message', description: 'Current read failure, or undefined when resolved.' }, { name: 'actor', description: 'Trusted caller.' }],
+        returns: 'Committed view.',
+      },
+      {
+        signature: 'abstract trace(id: FlowExecutionId, actor: FlowActor): FlowView',
+        description: 'Read an offline trace without invoking external effects.',
+        parameters: [{ name: 'id', description: 'Execution.' }, { name: 'actor', description: 'Caller.' }],
+        returns: 'Offline trace without invoking effects.',
+      },
+    ],
+  },
+  {
+    key: 'flowYaml',
+    summary: 'Loader provider; registrations unwind with its plugin fiber.',
+    description: 'Loader provider; registrations unwind with its plugin fiber.',
+    methods: [],
   },
   {
     key: 'forge',
@@ -2097,6 +2395,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Goal service (`ctx.goals`) backed exclusively by the owning session log.',
     methods: [
       {
+        signature: 'registerControlGuard(guard: (agent: Agent, operation: \'create\' | \'resume\' | \'complete\') => string | undefined): () => void',
+        description: 'Register host-owned denial of competing Goal creation, Resume or completion.',
+        parameters: [{ name: 'guard', description: 'Returns a diagnostic when another execution controls the objective.' }],
+        returns: 'Registration disposer.',
+      },
+      {
         signature: '@Remote(\'get\') get(agent: Agent): GoalView | undefined',
         description: 'Read the current goal for one exact live agent.',
         parameters: [{ name: 'agent', description: 'owning live agent.' }],
@@ -2253,6 +2557,19 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: 'readonly cordis: CordisRuntimeTreeReader',
         description: 'Read-only Cordis topology queries independent of CDP sessions.',
         parameters: [],
+      },
+    ],
+  },
+  {
+    key: 'invariants',
+    summary: 'Package-owned invariant registry with global and regex-based selection.',
+    description: 'Package-owned invariant registry with global and regex-based selection.',
+    methods: [
+      {
+        signature: 'register(packageName: string, installer: InvariantInstaller): () => void',
+        description: 'Register one package\'s invariant installer. The package name is reserved even when filtering disables its checks. Enabled installers run in a child fiber; failure disposes that fiber and releases the reservation.',
+        parameters: [{ name: 'packageName', description: 'full npm package name that owns the contribution.' }, { name: 'installer', description: 'listener or startup-check installer for the child context.' }],
+        returns: 'an effect-scoped disposer for the registration.',
       },
     ],
   },
@@ -3076,6 +3393,54 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [],
       },
     ],
+  },
+  {
+    key: 'promptCatalog',
+    summary: 'Immutable after startup sealing; registrations remain effect-owned for teardown.',
+    description: 'Immutable after startup sealing; registrations remain effect-owned for teardown.',
+    methods: [
+      {
+        signature: 'register(input: PromptBundle, source: string = \'inline\'): () => void',
+        description: 'Register an immutable prompt bundle before startup sealing.',
+        parameters: [{ name: 'input', description: 'Value to register.' }, { name: 'source', description: 'Origin of the registration.' }],
+        returns: 'Disposer that removes this registration.',
+      },
+      {
+        signature: 'get(ref: PromptBundleRef): PromptCatalogEntry',
+        description: 'Look up the pinned catalog entry.',
+        parameters: [{ name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }],
+        returns: 'The registered entry.',
+      },
+      {
+        signature: 'list(): readonly PromptCatalogEntry[]',
+        description: 'List the available prompt bundles.',
+        parameters: [],
+        returns: 'Catalog entries in stable order.',
+      },
+      {
+        signature: 'bind(ref: PromptBundleRef, variables: Readonly<Record<string, string>> = {}): BoundPromptBundle',
+        description: 'Substitute values into a pinned prompt bundle.',
+        parameters: [{ name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }, { name: 'variables', description: 'Values for the bundle placeholders.' }],
+        returns: 'Bound text and its source identity.',
+      },
+      {
+        signature: 'seal(): void',
+        description: 'Close registration for this catalog.',
+        parameters: [],
+      },
+      {
+        signature: 'isSealed(): boolean',
+        description: 'Report whether registration is closed.',
+        parameters: [],
+        returns: 'True after sealing.',
+      },
+    ],
+  },
+  {
+    key: 'promptCatalogYaml',
+    summary: 'Startup barrier proving every configured prompt bundle is registered.',
+    description: 'Startup barrier proving every configured prompt bundle is registered.',
+    methods: [],
   },
   {
     key: 'ptcRuntime',
@@ -4471,6 +4836,120 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'sWorkflow',
+    summary: 'Sealed catalogs and state-machine owner.',
+    description: 'Sealed catalogs and state-machine owner.',
+    methods: [
+      {
+        signature: 'registerDefinition(input: SWorkflowDefinition, source: string = \'inline\'): () => void',
+        description: 'Register an immutable workflow definition before sealing.',
+        parameters: [{ name: 'input', description: 'Value to register.' }, { name: 'source', description: 'Origin of the registration.' }],
+        returns: 'Disposer that removes this registration.',
+      },
+      {
+        signature: 'registerAdapter(input: SWorkflowServiceAdapter, source: string = \'inline\'): () => void',
+        description: 'Register an immutable service adapter before sealing.',
+        parameters: [{ name: 'input', description: 'Value to register.' }, { name: 'source', description: 'Origin of the registration.' }],
+        returns: 'Disposer that removes this registration.',
+      },
+      {
+        signature: 'seal(): void',
+        description: 'Close registration for this catalog.',
+        parameters: [],
+      },
+      {
+        signature: 'isSealed(): boolean',
+        description: 'Report whether registration is closed.',
+        parameters: [],
+        returns: 'True after sealing.',
+      },
+      {
+        signature: 'catalog(service?: string, preset?: SWorkflowPreset): { definitions: readonly SWorkflowCatalogEntry<SWorkflowDefinition>[] adapters: readonly SWorkflowCatalogEntry<SWorkflowServiceAdapter>[] }',
+        description: 'List available workflow definitions and service adapters.',
+        parameters: [{ name: 'service', description: 'Optional service filter.' }, { name: 'preset', description: 'Optional caller preset filter.' }],
+        returns: 'Matching catalog entries.',
+      },
+      {
+        signature: 'get(agent: Agent): SWorkflowProjection',
+        description: 'Read the current Session workflow projection.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }],
+        returns: 'Projected workflow state.',
+      },
+      {
+        signature: 'start(agent: Agent, request: SWorkflowStartRequest): SWorkflowSnapshot',
+        description: 'Start a run in the active Agent Session.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'request', description: 'Definition, adapter, and limits for this run.' }],
+        returns: 'Snapshot of the new run.',
+      },
+      {
+        signature: 'updateDraft(agent: Agent, ref: SWorkflowRunRef, draft: JsonValue, summary: string): SWorkflowSnapshot',
+        description: 'Replace the draft in an active run.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }, { name: 'draft', description: 'Replacement draft value.' }, { name: 'summary', description: 'Short description of the draft.' }],
+        returns: 'Snapshot with the updated draft.',
+      },
+      {
+        signature: 'checkpoint(agent: Agent, ref: SWorkflowRunRef, stepId: string, note: string, usage: Partial<SWorkflowUsage> = {}): SWorkflowSnapshot',
+        description: 'Record step progress and resource use.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }, { name: 'stepId', description: 'Step that reached the checkpoint.' }, { name: 'note', description: 'Checkpoint text.' }, { name: 'usage', description: 'Resources to add to the recorded totals.' }],
+        returns: 'Snapshot after the checkpoint.',
+      },
+      {
+        signature: 'requestInput(agent: Agent, ref: SWorkflowRunRef, prompt: string): SWorkflowSnapshot',
+        description: 'Pause progress until the owner supplies input.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }, { name: 'prompt', description: 'Question to show the owner.' }],
+        returns: 'Snapshot with the pending request.',
+      },
+      {
+        signature: 'requestCompletion(agent: Agent, ref: SWorkflowRunRef, prompt: string): SWorkflowSnapshot',
+        description: 'Ask the owner to review the result.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }, { name: 'prompt', description: 'Question to show the owner.' }],
+        returns: 'Snapshot with the pending review.',
+      },
+      {
+        signature: 'answerInput(agent: Agent, ref: SWorkflowRunRef, answer: string): SWorkflowSnapshot',
+        description: 'Supply the requested input for the run revision.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }, { name: 'answer', description: 'Response from the owner.' }],
+        returns: 'Snapshot after accepting the answer.',
+      },
+      {
+        signature: 'approveCompletion(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot',
+        description: 'Approve the pending completion review.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }],
+        returns: 'Snapshot after approval.',
+      },
+      {
+        signature: 'pause(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot',
+        description: 'Pause the current run revision.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }],
+        returns: 'Snapshot of the paused run.',
+      },
+      {
+        signature: 'resume(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot',
+        description: 'Resume a paused run.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }],
+        returns: 'Snapshot of the resumed run.',
+      },
+      {
+        signature: 'cancel(agent: Agent, ref: SWorkflowRunRef): SWorkflowSnapshot',
+        description: 'Cancel the current run revision.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }],
+        returns: 'Snapshot of the cancelled run.',
+      },
+      {
+        signature: 'raiseBudgets(agent: Agent, ref: SWorkflowRunRef, patch: Partial<SWorkflowBudget>): SWorkflowSnapshot',
+        description: 'Raise the limits for the current run revision.',
+        parameters: [{ name: 'agent', description: 'Agent that owns the Session.' }, { name: 'ref', description: 'Pinned identity and, for a run, expected revision.' }, { name: 'patch', description: 'Limits to increase.' }],
+        returns: 'Snapshot with the revised limits.',
+      },
+    ],
+  },
+  {
+    key: 'sWorkflowYaml',
+    summary: 'Startup barrier proving every configured workflow document is registered.',
+    description: 'Startup barrier proving every configured workflow document is registered.',
+    methods: [],
+  },
+  {
     key: 'systemPrompt',
     summary: 'Registry service for the prompt inputs assembled before each model step.',
     description: 'Registry service for the prompt inputs assembled before each model step.',
@@ -4783,6 +5262,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the exact disposer that lifts this restriction.',
       },
       {
+        signature: 'restrictPhase(names: readonly string[]): () => void',
+        description: 'Limit one scoped phase to the named tools, including its own registrations.',
+        parameters: [{ name: 'names', description: 'tools the phase may expose and execute.' }],
+        returns: 'The disposer that restores normal admission.',
+      },
+      {
         signature: 'get(name: string, scope?: ScopeKey, toolSet?: ResolvedToolSet): ToolDefinition | undefined',
         description: 'Look up a tool as one scope sees it (scoped shadows global; a restricted-away global reads as absent). Presenters pass the calling agent so the rendered card matches the definition that actually executed.',
         parameters: [{ name: 'name', description: 'the tool name as registered.' }, { name: 'scope', description: 'the viewing scope (the agent); omitted = the global view.' }, { name: 'toolSet', description: 'step admission; omit only to inspect registered definitions.' }],
@@ -4817,6 +5302,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Provide the executor for the calling scope; an unscoped contribution is the deployment default. Rendering any executor-owned section requires the viewing scope\'s selection to remain available.',
         parameters: [{ name: 'executor', description: 'initialized provider owned by the contributing plugin.' }],
         returns: 'the effect disposer. Unloading leaves the selection unavailable until it is replaced.',
+      },
+      {
+        signature: 'isDirectlyCallable(name: string, scope?: ScopeKey): boolean',
+        description: 'Check whether the selected executor exposes a capability as a direct model call.',
+        parameters: [{ name: 'name', description: 'registered capability name.' }, { name: 'scope', description: 'viewing Agent or preset.' }],
+        returns: 'Whether the selected executor advertises the given name.',
       },
       {
         signature: 'async execute(input: ToolBatchInput): Promise<ToolBatchResult>',
@@ -5751,6 +6242,54 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'inspection', description: 'committed canonical prefix, including the feedback as its last event.' }],
   },
   {
+    name: 'flow/catalog-changed',
+    mode: 'emit',
+    signature: '\'flow/catalog-changed\'(): void',
+    summary: 'Catalog contributions changed.',
+    description: 'Catalog contributions changed.',
+    parameters: [],
+  },
+  {
+    name: 'flow/changed',
+    mode: 'parallel',
+    signature: '\'flow/changed\'(value: FlowView): void | Promise<void>',
+    summary: 'A durable execution revision committed.',
+    description: 'A durable execution revision committed.',
+    parameters: [{ name: 'value', description: 'Committed execution.' }],
+  },
+  {
+    name: 'flow/control-accepted',
+    mode: 'serial',
+    signature: '\'flow/control-accepted\'(payload: { flow: FlowView command: FlowControl commandId: string actor: FlowActor }): void | Promise<void>',
+    summary: 'A committed control awaits trusted host delivery.',
+    description: 'A committed control awaits trusted host delivery.',
+    parameters: [{ name: 'payload', description: 'Pinned command identity and caller.' }],
+  },
+  {
+    name: 'flow/model-input-accepted',
+    mode: 'serial',
+    signature: '\'flow/model-input-accepted\'(payload: { executionId: FlowOperationContext[\'executionId\'] agent: Agent }): void | Promise<void>',
+    summary: 'A native phase inbox receipt has been persisted.',
+    description: 'A native phase inbox receipt has been persisted.',
+    parameters: [{ name: 'payload', description: 'Exact execution and destination.' }],
+  },
+  {
+    name: 'flow/model-phase',
+    mode: 'serial',
+    signature: '\'flow/model-phase\'(payload: { agent: Agent executionId: FlowOperationContext[\'executionId\'] sourceSessionId: SessionId instructions: string scope: Context }): void | Promise<void>',
+    summary: 'Bind host policies to one phase scope.',
+    description: 'Bind host policies to one phase scope.',
+    parameters: [{ name: 'payload', description: 'Exact native phase and source.' }],
+  },
+  {
+    name: 'flow/summary-changed',
+    mode: 'emit',
+    signature: '\'flow/summary-changed\'(value: FlowSummary): void',
+    summary: 'A cropped committed execution read.',
+    description: 'A cropped committed execution read.',
+    parameters: [{ name: 'value', description: 'Progress without private drafts.' }],
+  },
+  {
     name: 'forge/providers-changed',
     mode: 'parallel',
     signature: '\'forge/providers-changed\'(forge: string): void | Promise<void>',
@@ -6647,6 +7186,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type BindingOrigin = \'created\' | \'referenced\' | \'discovered\' | \'tracked\';',
   },
   {
+    name: 'BoundPromptBundle',
+    declaration: 'export interface BoundPromptBundle {\n    readonly ref: PromptBundleRef;\n    readonly digest: `sha256:${string}`;\n    readonly sections: readonly PromptBundleSection[];\n    readonly texts: Readonly<Record<string, string>>;\n}',
+  },
+  {
     name: 'BoxProps',
     declaration: 'export interface BoxProps {\n    readonly flexDirection?: \'row\' | \'column\' | undefined;\n    readonly paddingX?: number | undefined;\n    readonly paddingY?: number | undefined;\n    readonly padding?: number | undefined;\n    readonly gap?: number | undefined;\n    readonly border?: boolean | string | undefined;\n    readonly borderColor?: string | undefined;\n    readonly children?: UiNode | undefined;\n}',
   },
@@ -6877,6 +7420,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CompactionTrigger',
     declaration: 'export type CompactionTrigger = \'pressure\' | \'context-overflow\';',
+  },
+  {
+    name: 'CompiledFlow',
+    declaration: 'export interface CompiledFlow extends FlowDefinition {\n    readonly digest: string;\n    readonly subflows: Readonly<Record<string, CompiledFlow>>;\n    readonly operations: Readonly<Record<string, string>>;\n    readonly expandedNodes: number;\n}',
   },
   {
     name: 'CompositionRowEnablement',
@@ -7275,6 +7822,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type DeepSeekLlmApiJson = null | boolean | number | string | DeepSeekLlmApiJson[] | {\n    [key: string]: DeepSeekLlmApiJson;\n};',
   },
   {
+    name: 'DeliveryId',
+    declaration: 'export type DeliveryId = Branded<\'EventSystemDeliveryId\'>;',
+  },
+  {
     name: 'DeliveryRetentionBounds',
     declaration: 'export interface DeliveryRetentionBounds {\n    readonly days: number;\n    readonly records: number;\n}',
   },
@@ -7415,6 +7966,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface EpochHeader {\n    config: LlmCallConfig;\n    adapterDefaults?: LlmCallConfigAdapterDefaults;\n    tools?: ToolSchema[];\n    system?: never;\n}',
   },
   {
+    name: 'EventAgentDefinition',
+    declaration: 'export interface EventAgentDefinition {\n    readonly id: string;\n    readonly prompt: string;\n    readonly tools: readonly string[];\n    readonly publishes: readonly string[];\n    readonly agentPreset?: string | undefined;\n    readonly provider?: string | undefined;\n    readonly model?: string | undefined;\n}',
+  },
+  {
+    name: 'EventId',
+    declaration: 'export type EventId = Branded<\'EventSystemEventId\'>;',
+  },
+  {
     name: 'EventLogOptions',
     declaration: 'export interface EventLogOptions {\n    exporter: LogExporterOptions;\n    resourceAttributes: Attributes;\n    scope: {\n        name: string;\n        version?: string;\n    };\n    processor: Omit<BatchLogRecordProcessorOptions, \'exporter\'>;\n    onFailure: SessionLogOptions[\'onFailure\'];\n}',
   },
@@ -7423,8 +7982,28 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export class EventLogReporter {\n    constructor(options: EventLogOptions);\n    emit(record: OTelEventRecord): void;\n    async shutdown(signal?: AbortSignal): Promise<void>;\n}',
   },
   {
+    name: 'EventSystemDefinition',
+    declaration: 'export interface EventSystemDefinition {\n    readonly id: string;\n    readonly version: string;\n    readonly primary: string;\n    readonly agents: readonly EventAgentDefinition[];\n    readonly events: Readonly<Record<string, JsonSchemaNode>>;\n    readonly subscriptions: readonly {\n        readonly id: string;\n        readonly event: string;\n        readonly target: string;\n        readonly retry?: RetryPolicy | undefined;\n    }[];\n}',
+  },
+  {
+    name: 'EventSystemMembership',
+    declaration: 'export interface EventSystemMembership {\n    readonly conversationId: SessionId;\n    readonly member: string;\n    readonly primary: boolean;\n}',
+  },
+  {
+    name: 'EventSystemSnapshot',
+    declaration: 'export type EventSystemSnapshot = z.infer<typeof snapshotSchema>;',
+  },
+  {
+    name: 'EventWait',
+    declaration: 'export type EventWait = z.infer<typeof waitSchema>;',
+  },
+  {
     name: 'EveryScheduleRecord',
     declaration: 'export interface EveryScheduleRecord {\n    readonly id: ScheduleId;\n    readonly kind: \'every\';\n    readonly title: string;\n    readonly prompt: string;\n    readonly everySeconds: number;\n    readonly scheduledAt: string;\n}',
+  },
+  {
+    name: 'ExecutionLimits',
+    declaration: 'export type ExecutionLimits = z.infer<typeof limitsSchema>;',
   },
   {
     name: 'FeedbackCategory',
@@ -7469,6 +8048,110 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'FinishReasonMap',
     declaration: 'export interface FinishReasonMap {\n    \'stop\': {\n        kind: \'stop\';\n    };\n    \'tool-calls\': {\n        kind: \'tool-calls\';\n    };\n    \'max-tokens\': {\n        kind: \'max-tokens\';\n    };\n    \'aborted\': {\n        kind: \'aborted\';\n        failure: LlmFailure;\n    };\n    \'error\': {\n        kind: \'error\';\n        failure: LlmFailure;\n    };\n}',
+  },
+  {
+    name: 'FlowActor',
+    declaration: 'export interface FlowActor {\n    readonly sessionId: SessionId;\n    readonly kind: \'model\' | \'human\' | \'host\';\n}',
+  },
+  {
+    name: 'FlowBranchNode',
+    declaration: 'export interface FlowBranchNode extends FlowNodeBase {\n    readonly kind: \'branch\';\n    readonly value: FlowValue;\n    readonly equals: JsonValue;\n    readonly then: string | null;\n    readonly otherwise: string | null;\n}',
+  },
+  {
+    name: 'FlowCallNode',
+    declaration: 'export interface FlowCallNode extends FlowNodeBase {\n    readonly kind: \'call\';\n    readonly operation: FlowRef;\n    readonly inputs: FlowValue;\n}',
+  },
+  {
+    name: 'FlowControl',
+    declaration: 'export type FlowControl = \'pause\' | \'resume\' | \'cancel\';',
+  },
+  {
+    name: 'FlowDefinition',
+    declaration: 'export interface FlowDefinition extends FlowRef {\n    readonly description: string;\n    readonly inputSchema: ObjectJsonSchema;\n    readonly outputSchema: JsonSchemaNode;\n    readonly nodes: readonly FlowNode[];\n    readonly outputs: FlowValue;\n    readonly publication?: {\n        readonly toolName: string;\n        readonly contexts: readonly string[];\n    };\n}',
+  },
+  {
+    name: 'FlowExecution',
+    declaration: 'export interface FlowExecution {\n    readonly id: FlowExecutionId;\n    readonly revision: number;\n    readonly definition: CompiledFlow;\n    readonly sourceSessionId: SessionId;\n    readonly conversations: readonly SessionId[];\n    readonly startKey: string;\n    readonly inputs: JsonValue;\n    readonly inputDigest: string;\n    readonly status: FlowStatus;\n    readonly frames: readonly FlowFrame[];\n    readonly nodes: readonly FlowNodeRecord[];\n    readonly pending?: FlowPending;\n    readonly result?: JsonValue;\n    readonly error?: string;\n    readonly limits: FlowLimits;\n    readonly usage: {\n        readonly requests: number;\n        readonly tokens: number;\n        readonly activeMillis: number;\n    };\n    readonly decisions: Readonly<Record<string, {\n        readonly digest: string;\n        readonly value: JsonValue;\n    }>>;\n    readonly deliveries?: Readonly<Record<string, {\n        readonly command: FlowControl;\n        readonly actor: FlowActor;\n        readonly observedRevision: number;\n        readonly state: \'pending\' | \'delivered\';\n    }>>;\n    readonly parentExecutionId?: FlowExecutionId;\n    readonly callerContext?: JsonValue;\n    readonly modelOptions?: JsonValue;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
+  },
+  {
+    name: 'FlowExecutionId',
+    declaration: 'export type FlowExecutionId = Branded<\'FlowExecutionId\'>;',
+  },
+  {
+    name: 'FlowFrame',
+    declaration: 'export interface FlowFrame {\n    readonly path: string;\n    readonly definition: CompiledFlow;\n    readonly inputs: JsonValue;\n    readonly node: string | null;\n    readonly outputs: Readonly<Record<string, JsonValue>>;\n    readonly result?: JsonValue;\n}',
+  },
+  {
+    name: 'FlowLimits',
+    declaration: 'export interface FlowLimits {\n    readonly maxRequests: number;\n    readonly maxTokens: number;\n    readonly maxActiveMillis: number;\n    readonly maxOutputTokens: number;\n    readonly maxRetainedBytes: number;\n    readonly maxExpandedNodes: number;\n}',
+  },
+  {
+    name: 'FlowModelNode',
+    declaration: 'export interface FlowModelNode extends FlowNodeBase {\n    readonly kind: \'model\';\n    readonly instructions: string;\n    readonly inputs: FlowValue;\n    readonly outputSchema: ObjectJsonSchema;\n    readonly conversation?: FlowValue;\n}',
+  },
+  {
+    name: 'FlowModelProvider',
+    declaration: 'export interface FlowModelProvider {\n    execute(node: FlowModelNode, inputs: JsonValue, conversation: SessionId, context: FlowOperationContext, limits: FlowLimits): Promise<FlowModelResult>;\n    reconcile?(node: FlowModelNode, conversation: SessionId, context: FlowOperationContext): Promise<FlowModelResult | undefined>;\n}',
+  },
+  {
+    name: 'FlowModelResult',
+    declaration: 'export interface FlowModelResult {\n    readonly value: JsonValue;\n    readonly tokens?: number;\n}',
+  },
+  {
+    name: 'FlowNode',
+    declaration: 'export type FlowNode = FlowCallNode | FlowModelNode | FlowWaitNode | FlowBranchNode | FlowSubflowNode;',
+  },
+  {
+    name: 'FlowNodeBase',
+    declaration: 'export interface FlowNodeBase {\n    readonly id: string;\n    readonly next?: string | null;\n    readonly result?: FlowValue;\n}',
+  },
+  {
+    name: 'FlowNodeRecord',
+    declaration: 'export interface FlowNodeRecord {\n    readonly id: string;\n    readonly kind: FlowNode[\'kind\'];\n    readonly operationId: string;\n    readonly attempt: number;\n    readonly state: \'running\' | \'waiting\' | \'succeeded\' | \'failed\' | \'unknown\';\n    readonly inputs: JsonValue;\n    readonly startedAt: number;\n    readonly completedAt?: number;\n    readonly dispatchState?: \'pending\' | \'dispatched\';\n    readonly activeStartedAt?: number;\n    readonly activeMillis?: number;\n    readonly output?: JsonValue;\n    readonly error?: string;\n    readonly tokens?: number;\n    readonly usageReported?: boolean;\n    readonly reservedTokens?: number;\n    readonly reservationSettled?: boolean;\n}',
+  },
+  {
+    name: 'FlowOperation',
+    declaration: 'export interface FlowOperation<I = JsonValue, O = JsonValue> extends FlowRef {\n    readonly inputSchema: JsonSchemaNode;\n    readonly outputSchema: JsonSchemaNode;\n    readonly cancellation: \'cooperative\' | \'await-settlement\';\n    readonly effect: \'read\' | \'write\';\n    readonly recovery: \'repeat\' | \'receipt\' | \'manual\';\n    execute(inputs: I, context: FlowOperationContext): Promise<O>;\n    reconcile?(inputs: I, context: FlowOperationContext): Promise<O | undefined>;\n}',
+  },
+  {
+    name: 'FlowOperationContext',
+    declaration: 'export interface FlowOperationContext {\n    readonly executionId: FlowExecutionId;\n    readonly nodeId: string;\n    readonly operationId: string;\n    readonly sourceSessionId: SessionId;\n    readonly signal: AbortSignal;\n    claimConversation(id: SessionId): Promise<void>;\n}',
+  },
+  {
+    name: 'FlowPending',
+    declaration: 'export interface FlowPending {\n    readonly id: string;\n    readonly nodeId: string;\n    readonly request: JsonValue;\n    readonly schema: JsonSchemaNode;\n}',
+  },
+  {
+    name: 'FlowRef',
+    declaration: 'export interface FlowRef {\n    readonly id: string;\n    readonly version: string;\n}',
+  },
+  {
+    name: 'FlowStart',
+    declaration: 'export interface FlowStart {\n    readonly definition: FlowRef;\n    readonly inputs: JsonValue;\n    readonly actor: FlowActor;\n    readonly context: string;\n    readonly requestId: string;\n    readonly deferred?: boolean;\n    readonly parentExecutionId?: FlowExecutionId;\n    readonly parentRevision?: number;\n}',
+  },
+  {
+    name: 'FlowStatus',
+    declaration: 'export type FlowStatus = \'running\' | \'waiting\' | \'paused\' | \'needs-resume\' | \'needs-reconcile\' | \'succeeded\' | \'failed\' | \'cancelled\';',
+  },
+  {
+    name: 'FlowSubflowNode',
+    declaration: 'export interface FlowSubflowNode extends FlowNodeBase {\n    readonly kind: \'flow\';\n    readonly flow: FlowRef;\n    readonly inputs: FlowValue;\n}',
+  },
+  {
+    name: 'FlowSummary',
+    declaration: 'export interface FlowSummary {\n    readonly id: FlowExecutionId;\n    readonly revision: number;\n    readonly title: string;\n    readonly status: FlowStatus;\n    readonly sourceSessionId: SessionId;\n    readonly conversations: readonly SessionId[];\n    readonly completedNodes: number;\n    readonly allowed_actions: readonly FlowControl[];\n    readonly error?: string;\n    readonly pending?: {\n        readonly id: string;\n        readonly request: JsonValue;\n    };\n    readonly result?: JsonValue;\n}',
+  },
+  {
+    name: 'FlowValue',
+    declaration: 'export type FlowValue = JsonValue;',
+  },
+  {
+    name: 'FlowView',
+    declaration: 'export interface FlowView extends FlowExecution {\n    readonly allowed_actions: readonly FlowControl[];\n}',
+  },
+  {
+    name: 'FlowWaitNode',
+    declaration: 'export interface FlowWaitNode extends FlowNodeBase {\n    readonly kind: \'wait\';\n    readonly request: FlowValue;\n    readonly outputSchema: JsonSchemaNode;\n}',
   },
   {
     name: 'ForgeActionFailure',
@@ -7979,6 +8662,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface HostConnectionRpc {\n    handle(channel: string, handler: ConnectionRpcHandler): () => Promise<void>;\n    intercept(channel: \'/api\', matches: ConnectionRpcEndpointMatcher, handler: ConnectionRpcHandler): () => Promise<void>;\n}',
   },
   {
+    name: 'HttpSourceId',
+    declaration: 'export type HttpSourceId = Branded<\'EventHttpSourceId\'>;',
+  },
+  {
+    name: 'HttpSourceInput',
+    declaration: 'export type HttpSourceInput = z.infer<typeof sourceSchema>;',
+  },
+  {
+    name: 'HttpSourceRecord',
+    declaration: 'export type HttpSourceRecord = z.infer<typeof recordSchema>;',
+  },
+  {
     name: 'ImageAttachmentLimits',
     declaration: 'export interface ImageAttachmentLimits {\n    maxImageBytes: number;\n    maxImagesPerMessage: number;\n    maxMessageImageBytes: number;\n    maxImagePixels: number;\n    maxImageDimension: number;\n    mediaTypes: readonly ImageMediaType[];\n}',
   },
@@ -8045,6 +8740,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'InstallSpecKind',
     declaration: 'export type InstallSpecKind = \'registry\' | \'path\' | \'git\' | \'tarball\';',
+  },
+  {
+    name: 'InvariantFailure',
+    declaration: 'export type InvariantFailure = (message: string) => never;',
+  },
+  {
+    name: 'InvariantInstaller',
+    declaration: 'export interface InvariantInstaller {\n    (ctx: Context, fail: InvariantFailure): void | Promise<void>;\n    readonly inject?: Inject;\n}',
   },
   {
     name: 'InvocationDescriptor',
@@ -9115,6 +9818,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PromptAssembly extends PromptPresentation {\n    tools: ToolSchema[];\n}',
   },
   {
+    name: 'PromptBundle',
+    declaration: 'export interface PromptBundle {\n    readonly apiVersion: \'dsh.deepseek.ai/v1\';\n    readonly kind: \'PromptBundle\';\n    readonly metadata: {\n        readonly id: string;\n        readonly version: string;\n    };\n    readonly sections: readonly PromptBundleSection[];\n    readonly texts?: Readonly<Record<string, string>>;\n}',
+  },
+  {
+    name: 'PromptBundleRef',
+    declaration: 'export interface PromptBundleRef {\n    readonly id: string;\n    readonly version: string;\n}',
+  },
+  {
+    name: 'PromptBundleSection',
+    declaration: 'export interface PromptBundleSection {\n    readonly id: string;\n    readonly order: number;\n    readonly text: string;\n}',
+  },
+  {
+    name: 'PromptCatalogEntry',
+    declaration: 'export interface PromptCatalogEntry {\n    readonly bundle: PromptBundle;\n    readonly digest: `sha256:${string}`;\n    readonly source: string;\n}',
+  },
+  {
     name: 'PromptContext',
     declaration: 'export interface PromptContext {\n    readonly name: string;\n    readonly order: number;\n    readonly text: string | ((context: AssembleContext) => string);\n    readonly interpolate?: boolean;\n    readonly required?: boolean;\n}',
   },
@@ -9209,6 +9928,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PtcRunSpec',
     declaration: 'export interface PtcRunSpec extends PtcRunRequest {\n    cwd: string;\n    timeoutMs: number | null;\n}',
+  },
+  {
+    name: 'PublishEventInput',
+    declaration: 'export interface PublishEventInput {\n    readonly type: string;\n    readonly payload: JsonValue;\n    readonly producer: string;\n    readonly dedupeKey: string;\n    readonly causation?: EventId;\n}',
   },
   {
     name: 'QueueAction',
@@ -9437,6 +10160,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ResumeAgentOptions',
     declaration: 'export interface ResumeAgentOptions {\n    readonly resumeSessionId: SessionId;\n    readonly agentOptions?: AgentOptions;\n    readonly signal?: AbortSignal;\n    readonly setup?: AgentSetup;\n}',
+  },
+  {
+    name: 'RetryPolicy',
+    declaration: 'export interface RetryPolicy {\n    readonly replaySafe: true;\n    readonly maxAttempts: number;\n    readonly initialBackoffMillis: number;\n    readonly maxBackoffMillis: number;\n}',
   },
   {
     name: 'ReviewDecision',
@@ -10807,6 +11534,62 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SurfaceSnapshot {\n    readonly generation: number;\n    readonly tree: readonly SerializedNode[] | null;\n}',
   },
   {
+    name: 'SWorkflowBudget',
+    declaration: 'export interface SWorkflowBudget {\n    readonly maxRounds: number;\n    readonly maxRequests: number;\n    readonly maxTokens: number;\n    readonly maxActiveMinutes: number;\n    readonly maxChildren: number;\n    readonly maxConcurrency: number;\n    readonly maxDelegationDepth: number;\n}',
+  },
+  {
+    name: 'SWorkflowCatalogEntry',
+    declaration: 'export interface SWorkflowCatalogEntry<T> {\n    readonly value: T;\n    readonly digest: `sha256:${string}`;\n    readonly source: string;\n}',
+  },
+  {
+    name: 'SWorkflowDefinition',
+    declaration: 'export interface SWorkflowDefinition {\n    readonly apiVersion: \'dsh.deepseek.ai/v1\';\n    readonly kind: \'WorkflowDefinition\';\n    readonly metadata: SWorkflowRef;\n    readonly service: string;\n    readonly presets: readonly SWorkflowPreset[];\n    readonly steps: readonly {\n        readonly id: string;\n        readonly kind: \'model\' | \'review\' | \'delegation\' | \'checkpoint\';\n        readonly description: string;\n    }[];\n}',
+  },
+  {
+    name: 'SWorkflowPendingDecision',
+    declaration: 'export interface SWorkflowPendingDecision {\n    readonly kind: \'input\' | \'completion\';\n    readonly prompt: string;\n    readonly requestedAt: number;\n}',
+  },
+  {
+    name: 'SWorkflowPreset',
+    declaration: 'export type SWorkflowPreset = \'focused\' | \'goal\' | \'orchestrated\';',
+  },
+  {
+    name: 'SWorkflowProjection',
+    declaration: 'export type SWorkflowProjection = SWorkflowSnapshot | null;',
+  },
+  {
+    name: 'SWorkflowRef',
+    declaration: 'export interface SWorkflowRef {\n    readonly id: string;\n    readonly version: string;\n}',
+  },
+  {
+    name: 'SWorkflowResolvedRef',
+    declaration: 'export interface SWorkflowResolvedRef extends SWorkflowRef {\n    readonly digest: string;\n}',
+  },
+  {
+    name: 'SWorkflowRunRef',
+    declaration: 'export interface SWorkflowRunRef {\n    readonly runId: string;\n    readonly revision: number;\n}',
+  },
+  {
+    name: 'SWorkflowServiceAdapter',
+    declaration: 'export interface SWorkflowServiceAdapter {\n    readonly apiVersion: \'dsh.deepseek.ai/v1\';\n    readonly kind: \'ServiceAdapter\';\n    readonly metadata: {\n        readonly id: string;\n        readonly version: string;\n    };\n    readonly service: string;\n    readonly promptBundles: readonly SWorkflowRef[];\n    readonly toolPackages: readonly string[];\n    readonly skillPackages: readonly string[];\n    readonly reviewKind: string;\n}',
+  },
+  {
+    name: 'SWorkflowSnapshot',
+    declaration: 'export interface SWorkflowSnapshot extends SWorkflowRunRef {\n    readonly definition: SWorkflowResolvedRef;\n    readonly adapter: SWorkflowResolvedRef;\n    readonly preset: SWorkflowPreset;\n    readonly service: string;\n    readonly objective: string;\n    readonly contract: JsonValue;\n    readonly status: SWorkflowStatus;\n    readonly budget: SWorkflowBudget;\n    readonly usage: SWorkflowUsage;\n    readonly draft?: JsonValue;\n    readonly draftSummary?: string;\n    readonly checkpoint?: {\n        readonly stepId: string;\n        readonly note: string;\n    };\n    readonly pending?: SWorkflowPendingDecision;\n    readonly blockedReason?: string;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
+  },
+  {
+    name: 'SWorkflowStartRequest',
+    declaration: 'export interface SWorkflowStartRequest {\n    readonly definition: SWorkflowRef;\n    readonly adapter: SWorkflowRef;\n    readonly preset: SWorkflowPreset;\n    readonly objective: string;\n    readonly contract: JsonValue;\n    readonly budget?: Partial<SWorkflowBudget>;\n}',
+  },
+  {
+    name: 'SWorkflowStatus',
+    declaration: 'export type SWorkflowStatus = \'active\' | \'pause-pending\' | \'paused\' | \'awaiting-user-input\' | \'awaiting-user-completion\' | \'blocked\' | \'complete\' | \'cancelled\';',
+  },
+  {
+    name: 'SWorkflowUsage',
+    declaration: 'export interface SWorkflowUsage {\n    readonly rounds: number;\n    readonly requests: number;\n    readonly tokens: number;\n    readonly activeMillis: number;\n    readonly children: number;\n}',
+  },
+  {
     name: 'SyncedConfig',
     declaration: 'export type SyncedConfig<C> = {\n    readonly [K in keyof C as NonNullable<C[K]> extends Volatile<unknown> ? K : never]-?: NonNullable<C[K]> extends Volatile<infer V> ? SyncedConfigRef<V | undefined> : never;\n};',
   },
@@ -11168,7 +11951,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'ToolsService',
-    declaration: 'export class ToolsService extends Service {\n    static inject;\n    static Config;\n    constructor(ctx: Context);\n    register(definition: ToolDefinition, options: ToolRegistrationOptions = {}): () => void;\n    restrict(filter: ToolRestriction): () => void;\n    get(name: string, scope?: ScopeKey, toolSet?: ResolvedToolSet): ToolDefinition | undefined;\n    executable(name: string, scope?: ScopeKey, toolSet?: ResolvedToolSet): ToolDefinition | undefined;\n    async resolve(context: ToolActivationContext): Promise<ResolvedToolSet>;\n    definitions(scope?: ScopeKey, toolSet?: ResolvedToolSet): readonly ToolDefinition[];\n    schemas(scope?: ScopeKey, toolSet?: ResolvedToolSet): ToolSchema[];\n    setExecutor(executor: ToolExecutor): () => void;\n    async execute(input: ToolBatchInput): Promise<ToolBatchResult>;\n    guard(guard: ToolGuard): () => void;\n    checkGuards(exec: ToolExecution): ToolGuardDenial | undefined;\n}',
+    declaration: 'export class ToolsService extends Service {\n    static inject;\n    static Config;\n    constructor(ctx: Context);\n    register(definition: ToolDefinition, options: ToolRegistrationOptions = {}): () => void;\n    restrict(filter: ToolRestriction): () => void;\n    restrictPhase(names: readonly string[]): () => void;\n    get(name: string, scope?: ScopeKey, toolSet?: ResolvedToolSet): ToolDefinition | undefined;\n    executable(name: string, scope?: ScopeKey, toolSet?: ResolvedToolSet): ToolDefinition | undefined;\n    async resolve(context: ToolActivationContext): Promise<ResolvedToolSet>;\n    definitions(scope?: ScopeKey, toolSet?: ResolvedToolSet): readonly ToolDefinition[];\n    schemas(scope?: ScopeKey, toolSet?: ResolvedToolSet): ToolSchema[];\n    setExecutor(executor: ToolExecutor): () => void;\n    isDirectlyCallable(name: string, scope?: ScopeKey): boolean;\n    async execute(input: ToolBatchInput): Promise<ToolBatchResult>;\n    guard(guard: ToolGuard): () => void;\n    checkGuards(exec: ToolExecution): ToolGuardDenial | undefined;\n}',
   },
   {
     name: 'ToolUpdate',
@@ -11433,6 +12216,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ViewerPluginPolicy',
     declaration: 'export interface ViewerPluginPolicy {\n    readonly plugin: string;\n    readonly mode: \'all\' | \'none\' | \'selected\';\n    readonly endpoints?: readonly string[];\n}',
+  },
+  {
+    name: 'WaitId',
+    declaration: 'export type WaitId = Branded<\'EventSystemWaitId\'>;',
+  },
+  {
+    name: 'WaitRequest',
+    declaration: 'export interface WaitRequest {\n    readonly kind: \'human\' | \'event\' | \'review\';\n    readonly reason: string;\n    readonly eventType?: string;\n    readonly matchKey?: string;\n    readonly matchValue?: string;\n}',
   },
   {
     name: 'WebAdmission',

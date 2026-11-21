@@ -202,7 +202,7 @@ The Web GUI this process serves, provided by the `web-runtime` row.
 getAdvertisedUrl(): string
 ```
 
-Source: [`packages/bundle/web-app/src/index.ts`](../../packages/bundle/web-app/src/index.ts)
+Source: [`packages/bundle/web-runtime/src/index.ts`](../../packages/bundle/web-runtime/src/index.ts)
 
 <a id="ctxwebserver--webserver"></a>
 

@@ -13,3 +13,5 @@ Only one agent edits at a time. Start a task branch from ankdesh-dsh. Before han
 ## Upstream updates
 
 Use master as the upstream-only reference. Fetch upstream and select an exact release tag or commit. Start a sync branch from ankdesh-dsh and merge the selected commit. Review the existing fork edits, preserve the root instruction link, update the upstream commit in the framework package recipe, and run private release verification before merging. After acceptance, fast-forward master to the selected upstream commit. Keep task changes in separate pull requests.
+
+The framework package recipe may record one full upstream commit SHA in its `upstreamCommit` field. The release workflow checks ancestry for that exact commit. The repository reference check still applies to all other fields and prose.

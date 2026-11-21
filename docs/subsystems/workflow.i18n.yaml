@@ -5,6 +5,9 @@
 /workflow:
   en: 4b264eb88e5cedfb
   zh: 78585763a79cd1c9
+/workflow/conversation-event-agents:
+  en: 378e994ac023af0c
+  zh: fc6d8a890d90cbee
 /workflow/the-start-request:
   en: 6c8755833293a36c
   zh: a0f061387fe0d3a6

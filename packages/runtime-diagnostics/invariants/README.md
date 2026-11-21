@@ -57,16 +57,7 @@ Each companion protects relationships its package owns, and a companion installs
 
 | Companion | Checks |
 |---|---|
-| `dsh-session`, `dsh-agent`, `dsh-scope`, `dsh-agent-loop` | Session log enclosure and call/result trace, agent-status transitions, scope-filtered dispatch subjects, loop-built request reconstruction |
-| `dsh-llm`, `dsh-llm-retry`, `dsh-tools`, `dsh-system-prompt` | LLM stream grammar, retry-failure shape, tool-pipeline stage pairing and frozen results, prompt-assembly section names |
-| `dsh-compaction`, `dsh-hook-protocol`, `dsh-sandbox-policy` | Compaction stream pairing, hook invocation/result pairing, sandbox mode values |
-| `dsh-fs`, `dsh-subagent`, `dsh-workflow`, `dsh-tool-workflow` | Filesystem event identity, subagent provider and start/end pairing, workflow lifecycle identity, workflow record shape |
-| `dsh-goal`, `dsh-goal-round-driver` | Durable goal-stream folds and reconstructed continuation prompts |
-| `dsh-permission-presets`, `dsh-user-approval`, `dsh-commands` | Preset references to live presets, approval asked/decided pairing, command run/done pairing |
-| `dsh-jobs`, `dsh-tool-todo`, `dsh-time-context` | Job snapshot field relationships, whole-list todo shape, durable clock readings |
-| `dsh-credentials`, `dsh-settings`, `dsh-storage-domain`, `dsh-workspace` | Commit events against the live service or memory state, entity-cache mirroring |
-| `dsh-agent-presets`, `dsh-session-title`, `dsh-plan-mode`, `dsh-schedule` | Preset mount placement, title source citation, plan-mode payload, schedule stream |
-| `dsh-client-hmr`, `dsh-client-modules`, `dsh-client-runtime` | Browser/node-half stat-watcher lifecycle, boot entry graph, slot mutation versioning |
+| `dsh-event-system`, `dsh-event-system-http`, `dsh-flow-model-native` | Durable event delivery, HTTP wait ownership, and native Flow phase state |
 
 Every other workspace package omits the companion and states the package-specific reason in its README.
 
@@ -77,12 +68,12 @@ A companion is a normal plugin you mount beside the registry. It declares any se
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
 import InvariantRegistry from '@deepseek-ai/dsh-invariants'
-import * as SessionInvariant from '@deepseek-ai/dsh-session/invariant'
+import * as EventSystemInvariant from '@deepseek-ai/dsh-event-system/invariant'
 
 declare const ctx: Context
 
 ctx.plugin(InvariantRegistry, { enabled: true })
-ctx.plugin(SessionInvariant)
+ctx.plugin(EventSystemInvariant)
 ```
 
 ### When a check fails
@@ -104,7 +95,6 @@ This section explains the design behind the registry; the observable behavior is
 - **Product-independent registry.** The service imports no session, agent, scope, or agent-loop package and contains none of their checks; companions carry checks next to their owners.
 - **Real relationships, not synthetic assertions.** A companion checks an event-stream or mutable-data relationship its package owns; confirming a method, plugin name, injection, or fixed pure result is a type, load, or unit-test concern, never a runtime invariant.
 - **Registration reserves ownership.** A package name is reserved even when filters keep its installer inactive, so two plugins can never silently claim the same name.
-- **Companion wiring is mechanically enforced.** `pnpm run verify-package-invariants` rejects empty installers, installers that omit or ignore the reporter, wrong registration names, incomplete publication wiring, and stale wiring for omitted companions ([companion-omission note](../../../.agents/notes/implemented/simplification/2026-08-28-omit-unneeded-invariant-companions.md)).
 
 ### Source map
 
@@ -126,9 +116,8 @@ This section explains the design behind the registry; the observable behavior is
 
 Read these pages when the package-level contract is not enough. They move from the generated service reference to the decision evidence and the group map.
 
-- [Runtime invariants subsystem](../../../docs/subsystems/invariants.md) — the generated reference for `Config`, the installer, the service, and the companion contract.
+- [Runtime invariants subsystem](../../../docs/subsystems/core.md) — the generated reference for `Config`, the installer, the service, and the companion contract.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-invariants) — every accepted config field and its source declaration.
-- [Invariant runtime contracts Agent Note](../../../.agents/notes/implemented/architecture/2026-07-19-package-invariant-runtime-contracts.md) — what a runtime invariant may assert and the mechanical gate that enforces companion wiring.
 - [Runtime-diagnostics group map](../../README.md) — adjacent diagnostics packages.
 
 -----
@@ -137,10 +126,6 @@ Read these pages when the package-level contract is not enough. They move from t
 ## Model Experience
 
 None, as the observer validates requests but never rewrites their context.
-
-#### KV Cache effect
-
-Checks observe assembled requests and durable state without mutating request content, so provider cache reuse is exactly what the underlying composition produces.
 
 ## Known Limitations and Deferred Work
 
@@ -151,7 +136,6 @@ These limits define when the registry is a poor fit or needs operational care. T
 
 - **Filters are fixed for the service lifetime** — `enabled`, `package_allowlist`, and `package_blocklist` are compiled once at startup; changing them requires a Cordis plugin reload.
 - **Live-only companions miss pre-reload operations** — a companion that only observes live operations cannot reconstruct operations that began before its own reload; session-backed companions rebuild their baseline from durable events.
-- **Request reconstruction covers loop-built requests only** — the `dsh-agent-loop` companion reconstructs requests explicitly built by the loop; direct one-shot LLM calls remain outside that contract even when callers freeze them or attach a session id.
 - **No checks without a companion** — the registry ships no product checks; a composition that mounts the service alone observes nothing.
 
 <a id="dev-note"></a>

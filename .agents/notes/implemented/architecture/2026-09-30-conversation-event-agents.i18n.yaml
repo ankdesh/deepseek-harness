@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-30-conversation-event-agents.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-30-conversation-event-agents.md
-2026-09-30-conversation-event-agents.md: e7cc9b57d0c1a854fbedceb6e5742518693fa402
-2026-09-30-conversation-event-agents.zh.md: a282dedff948c0b0e3f8eb274ee982fc8b73a3a4
+/agent-note-persistent-conversation-event-agents:
+  en: c63c9f88d2af1115
+  zh: 656e327942f27b12
+/agent-note-persistent-conversation-event-agents/problem:
+  en: f3d64940ef799880
+  zh: 431172a39a0cc0ee
+/agent-note-persistent-conversation-event-agents/decision:
+  en: 8bec462b8401bb0d
+  zh: 92c95965c18cca41
+/agent-note-persistent-conversation-event-agents/alternatives-considered:
+  en: b15961002b6b2de3
+  zh: 6ea4916fd3d026af
+/agent-note-persistent-conversation-event-agents/verification:
+  en: 41d0c010ad4c5d25
+  zh: 3ceea18e1835dc4c
+/agent-note-persistent-conversation-event-agents/consequences:
+  en: 12b6023399b5d91f
+  zh: 0a9f7a4e4ed22332

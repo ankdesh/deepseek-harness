@@ -1,6 +1,40 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/workflow/flow-model-native/README.md
-README.md: fc1589be278abab639e849cfaf0d2f60ca48a736
-README.zh.md: d04ebe2067b13c9df62bd1ee4b786635fbf83b10
+/:
+  en: 1bd8bf31d1805d48
+  zh: 663a3afff27c782e
+/deepseek-ai-dsh-flow-model-native:
+  en: c14762ef858fd1c1
+  zh: 92446630be58672a
+/deepseek-ai-dsh-flow-model-native/summary:
+  en: cfbda779ac2e7d9e
+  zh: 2554f19ca7eebbea
+/deepseek-ai-dsh-flow-model-native/table-of-contents:
+  en: 29fd260d67958928
+  zh: fab9f4d302bf1965
+/deepseek-ai-dsh-flow-model-native/use-this-package:
+  en: 703530a9c994adfe
+  zh: e6dfb91a83838f6d
+/deepseek-ai-dsh-flow-model-native/dev-note:
+  en: f3c698886ef928a7
+  zh: eaac63c14c20b932
+/deepseek-ai-dsh-flow-model-native/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-flow-model-native/model-experience/phase-input-and-result-reporting:
+  en: 227c5dd2722e380b
+  zh: abf44ea098ede433
+/deepseek-ai-dsh-flow-model-native/model-experience/phase-input-and-result-reporting/what-the-model-sees:
+  en: 65ead83fdc5b9857
+  zh: f5c036d4c1b6dc09
+/deepseek-ai-dsh-flow-model-native/model-experience/phase-input-and-result-reporting/token-effect:
+  en: afb9cba765160c2b
+  zh: 8b342a7c77a12956
+/deepseek-ai-dsh-flow-model-native/model-experience/phase-input-and-result-reporting/kv-cache-effect:
+  en: dfe40f0cacbb5e3e
+  zh: dc2ce5039255bb25
+/deepseek-ai-dsh-flow-model-native/known-limitations-and-deferred-work:
+  en: 1e728eaf3a4f3954
+  zh: 16eeed30be371753

@@ -1,6 +1,46 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bundle/web-runtime/README.md
-README.md: 14264b6a20f6cf7044d04b717be274ac7bea4604
-README.zh.md: ee8f19d3d23f1457c1a48976023effa164f03344
+/:
+  en: bf5550655ab897ef
+  zh: a63e61187c390380
+/deepseek-ai-dsh-web-runtime:
+  en: f183db9388e9171b
+  zh: dc6d27cedf5d5225
+/deepseek-ai-dsh-web-runtime/summary:
+  en: 0e42759798044c32
+  zh: e7559bdbc83619f6
+/deepseek-ai-dsh-web-runtime/table-of-contents:
+  en: e6747830a09a09aa
+  zh: d4642376b968a437
+/deepseek-ai-dsh-web-runtime/use-this-package:
+  en: 21705e939c36123a
+  zh: 912debd92946ea17
+/deepseek-ai-dsh-web-runtime/understand-the-implementation:
+  en: be6694e50b6655cb
+  zh: ada847fc56ee02e2
+/deepseek-ai-dsh-web-runtime/further-exploration:
+  en: a291fd1f06972725
+  zh: cd7359d71f894def
+/deepseek-ai-dsh-web-runtime/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-web-runtime/model-experience/harness-source-and-web-surface-context:
+  en: e6febc53efe0f51d
+  zh: 9177816a8678d65d
+/deepseek-ai-dsh-web-runtime/model-experience/harness-source-and-web-surface-context/what-the-model-sees:
+  en: 359b949dd483477f
+  zh: 1476006614a82282
+/deepseek-ai-dsh-web-runtime/model-experience/harness-source-and-web-surface-context/token-effect:
+  en: 908fc84d6849a830
+  zh: 56fe5e418bab60ba
+/deepseek-ai-dsh-web-runtime/model-experience/harness-source-and-web-surface-context/kv-cache-effect:
+  en: da0f568d6d661c5e
+  zh: 606919b7d37c95bf
+/deepseek-ai-dsh-web-runtime/known-limitations-and-deferred-work:
+  en: 1b87c686f46e0f3e
+  zh: 01c58060bd898660
+/deepseek-ai-dsh-web-runtime/known-limitations-and-deferred-work/dev-note:
+  en: 0a1253c6f7b5e8b9
+  zh: 9f56528562c7c914
