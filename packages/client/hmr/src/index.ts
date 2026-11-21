@@ -1,31 +1,26 @@
 /**
- * HMR plugin, node half: the host end of the dev reload chain. One interval
+ * Host transport for Web client graph changes and rebuilt bundles. One interval
  * stat-polls every graph row's client bundle (polling by design: network mounts
- * deliver no inotify events), reports changes through
- * `clientModules.rebuilt(id)`, and serves the `/plugins/events` SSE channel
- * broadcasting graph/rebuilt frames to the browser half (src/client/).
- * The web bundle mounts this row unconditionally: without a rebuild
- * watcher rewriting client bundles, the poll observes no changes and the
- * chain stays idle.
+ * deliver no inotify events) and reports changes through
+ * `clientModules.rebuilt(id)`; the `pluginEvents` Remote stream delivers graph,
+ * rebuild, and synced configuration changes to the browser half (src/client/).
+ * The Web composition mounts this transport for live graph updates;
+ * a development rebuild watcher also supplies bundle changes.
  */
 import { statSync } from 'node:fs'
-import type { ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-// Type imports carry the clientModules/webServer Context merges.
+// Type import carries the clientModules Context merge.
 import type { ClientArtifactBaseline } from '@deepseek-ai/dsh-client-modules'
-import type {} from '@deepseek-ai/dsh-host-webserver'
-import type { PluginsEventFrame } from './events.ts'
-import { EVENTS_ENDPOINT } from './events.ts'
+import { PluginEvents } from './plugin-events.ts'
 
-export type { PluginsEventFrame } from './events.ts'
-export { EVENTS_ENDPOINT } from './events.ts'
+export type * from './types.ts'
 
 /** Cordis plugin name. */
 export const name = 'client-hmr'
 
-/** Required services: the web plugin table and the route registry. */
-export const inject = ['clientModules', 'webServer']
+/** Required service: the client graph. */
+export const inject = ['clientModules']
 
 /** Plugin config, validated by the same-named schemastery schema. */
 export interface Config {
@@ -37,11 +32,6 @@ export const Config: z<Config> = z.object({
   pollIntervalMs: z.number().step(1).min(1).default(500),
 })
 
-/** Serialize one frame as an SSE data line. */
-function sseData(frame: PluginsEventFrame): string {
-  return `data: ${JSON.stringify(frame)}\n\n`
-}
-
 type WatchedBundleStat = Omit<ClientArtifactBaseline, 'path'>
 
 type WatchedBundle = {
@@ -51,17 +41,18 @@ type WatchedBundle = {
 /** Snapshot the executable bundle metadata that drives reloads. */
 function bundleStat(path: string): WatchedBundleStat {
   const bundle = statSync(path)
-  return { mtimeMs: bundle.mtimeMs, size: bundle.size }
+  return { mtimeMs: bundle.mtimeMs, ctimeMs: bundle.ctimeMs, size: bundle.size }
 }
 
-/** Whether the executable bundle is unchanged since the last successful re-hash. */
+/** Whether the executable bundle metadata is unchanged since its last publication. */
 function sameBundleStat(left: WatchedBundleStat, right: WatchedBundleStat): boolean {
   return left.mtimeMs === right.mtimeMs
+    && left.ctimeMs === right.ctimeMs
     && left.size === right.size
 }
 
 /**
- * Mount the dev chain: bundle watches, rebuilt reporting, and the SSE channel.
+ * Mount bundle watches and the plugin-events Remote service.
  * @param ctx - host plugin context carrying clientModules and webServer.
  * @param config - validated {@link Config}.
  */
@@ -72,10 +63,8 @@ export function apply(ctx: Context, config: Config): void {
   // --- bundle watch: one HMR-owned stat poll ------------------------------
   const watched = new Map<string, WatchedBundle>()
 
-  const rehash = (id: string, watch: WatchedBundle, current: WatchedBundleStat): void => {
+  const publish = (id: string, watch: WatchedBundle, current: WatchedBundleStat): void => {
     try {
-      // rebuilt() replaces the opaque startup rev on its first call; later
-      // calls stay silent when the content hash is unchanged.
       ctx.clientModules.rebuilt(id)
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
@@ -86,6 +75,7 @@ export function apply(ctx: Context, config: Config): void {
       ctx.logger.warn(error)
     }
     watch.mtimeMs = current.mtimeMs
+    watch.ctimeMs = current.ctimeMs
     watch.size = current.size
     watch.dirty = false
   }
@@ -102,8 +92,8 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
     // The module host captured its baseline before reading the bytes in the
-    // startup batch. Only a mismatch crosses into the content-hash path.
-    if (!sameBundleStat(current, watch)) rehash(id, watch, current)
+    // startup batch. Only a mismatch crosses into generation publication.
+    if (!sameBundleStat(current, watch)) publish(id, watch, current)
   }
 
   const pollWatches = (): void => {
@@ -117,9 +107,10 @@ export function apply(ctx: Context, config: Config): void {
         continue
       }
       if (!watch.dirty && sameBundleStat(current, watch)) continue
-      // Stat-before-hash preserves a detectable older baseline for writes that
-      // land during hashing. Repeated stat changes heal a torn read.
-      rehash(id, watch, current)
+      // Stat-before-publication preserves a detectable older baseline for
+      // writes that land during the read. The preset stamps the entry after
+      // sibling chunks, so a completed build supplies the final stat change.
+      publish(id, watch, current)
     }
   }
 
@@ -143,7 +134,7 @@ export function apply(ctx: Context, config: Config): void {
   ctx.effect(() => {
     // Initial sync covers rows already in the graph; the subscription covers
     // rows arriving later (boot-window activations, including this plugin's
-    // own row — no self-exemption, a modules/hmr rebuild rides the same chain).
+    // own row; bootstrap revisions also reach page diagnostics).
     syncWatches()
     const unsubscribe = ctx.clientModules.onGraphChanged(syncWatches)
     const timer = setInterval(pollWatches, pollIntervalMs)
@@ -155,47 +146,5 @@ export function apply(ctx: Context, config: Config): void {
     }
   }, 'client-hmr: bundle watches')
 
-  // --- /plugins/events SSE channel ----------------------------------------
-  const connections = new Set<ServerResponse>()
-
-  const connect = (res: ServerResponse): void => {
-    res.writeHead(200, {
-      'content-type': 'text/event-stream',
-      'cache-control': 'no-cache',
-      'connection': 'keep-alive',
-    })
-    // Comment line on open so clients/proxies see a live channel even when
-    // no rebuild ever happens; EventSource frame parsing skips it naturally.
-    res.write(': connected\n\n')
-    res.write(sseData({ type: 'graph', graph: ctx.clientModules.graph() }))
-    connections.add(res)
-    res.on('close', () => { connections.delete(res) })
-  }
-
-  ctx.effect(() => {
-    const disposeRoute = ctx.webServer.register({
-      kind: 'exact',
-      path: EVENTS_ENDPOINT,
-      handler: (req, res) => {
-        // Named routes match ahead of the carrier's method gate; keep the old
-        // global 405 semantics for non-GET hits on this endpoint.
-        if (req.method !== 'GET' && req.method !== 'HEAD') {
-          res.writeHead(405)
-          res.end()
-          return
-        }
-        connect(res)
-      },
-    })
-    const unsubscribe = ctx.clientModules.onRebuilt((id, rev) => {
-      const line = sseData({ type: 'rebuilt', id, rev })
-      for (const res of connections) res.write(line)
-    })
-    return () => {
-      unsubscribe()
-      disposeRoute()
-      for (const res of connections) res.destroy()
-      connections.clear()
-    }
-  }, 'client-hmr: /plugins/events channel')
+  ctx.plugin(PluginEvents)
 }

@@ -24,13 +24,15 @@ kind: "package-library"
 <a id="behavior"></a>
 ## 行为
 
-- **唯一可复用 ABI owner** — `abi.ts` 拥有两条 process 路径消费的 Win32 常量与 x64 布局值。`ffi.ts` 懒加载 `kernel32.dll` 与 `advapi32.dll`，核验 `STARTUPINFOW` 和 `PROCESS_INFORMATION`，提供带类型的操作与错误格式化，并让沙箱策略通过同一组已加载库绑定剩余 API。
+- **唯一可复用 ABI owner** — `abi.ts` 拥有两条 process 路径消费的 Win32 常量与 x64 布局值。`ffi.ts` 懒加载 `kernel32.dll` 与 `advapi32.dll`，核验 `STARTUPINFOW` 和 `PROCESS_INFORMATION`，提供带类型的操作与错误格式化，并让沙箱策略通过同一组已加载库绑定剩余 API。受检调用失败时抛出 `Win32Error`，它是 code 为 `WIN32_ERROR` 的 `HarnessError`，`api` 与 `win32Code` 字段标明失败的调用；拥有该操作的调用方再把它包装为自己的带 code 错误，并以 `Win32Error` 作为 `cause`。
 - **restricted-token 创建** — `RestrictedProcessSpawnOptions` 要求沙箱的 primary token，并使用 `CreateProcessAsUserW`。pipe 与 inherited-stdio 路径共用命令行引号处理、cwd、restricted-token null 环境策略、返回值检查与句柄清理。
 - **管道进程原语** — `spawnPipedProcess()` 创建匿名 stdin/stdout/stderr 管道，立即关闭 stdin，并返回两个读取端；调用方负责等待进程与排空管道。任一局部失败都会关闭该操作已经拥有的句柄，并在各自 Win32 生命周期结束后释放每个 Koffi 输出槽与结构体分配。
 - **继承 stdio 的 Job 原语** — `spawnInheritedJobProcess()` 创建一个 kill-on-close Job，临时把当前 stdio 句柄设为可继承，以 suspended 状态创建 restricted child，把它分配给 Job，再恢复初始线程。目标代码不会在 Job 分配前运行；受控的分配或恢复失败会终止 suspended child，或在释放全部已拥有句柄前关闭已分配的 Job。
 - **ordinary Job runner 原语** — `CurrentTokenProcessSpawnOptions` 要求已解析的 `applicationName`、完整 target 环境，以及三个专用于 target stdin、stdout 与 stderr 的 runner CRT 描述符。`spawnCurrentTokenJobProcess()` 通过 Node 导出的 `uv_get_osfhandle()` 把这些描述符映射为 OS 句柄，拒绝无效结果，临时把句柄设为可继承，并通过 `STARTF_USESTDHANDLES` 传入。它使用 `CREATE_UNICODE_ENVIRONMENT` 传入排序后的 UTF-16LE 环境块，再以 suspended 状态通过 `CreateProcessW` 创建 target、把它分配给 unnamed kill-on-close Job，并只在分配后恢复。原始命令行 argv 项保持不变，runner 也可以关闭自己的 carrier 描述符，而不触碰 Node 自身的标准流。
 - **ordinary 结算操作** — `pollProcessExit()` 单独发布 direct exit，`isJobEmpty()` 则读取 `QueryInformationJobObject(JobObjectBasicAccountingInformation)`，直到 `ActiveProcesses` 归零。带检查的 Job 终止与句柄关闭使 runner 保持唯一 native owner。
 - **显式结算归属** — `waitForProcessExit()` 等待并关闭沙箱 process 句柄；ordinary runner 的 process polling、Job accounting 与 checked Job termination/closure 是独立操作。`drainPipe()` 在排空期间复用一个 native count slot，释放该分配并关闭管道读取句柄。每个调用方拥有自己的 result 组合与返回句柄。
+
+进程创建在目标代码运行前设置 `STARTF_USESHOWWINDOW` 和 `SW_HIDE`。它保留控制台继承，不添加可能导致受限令牌下 DLL 初始化失败的 `CREATE_NO_WINDOW` 或 `CREATE_NEW_CONSOLE`。已有的父进程控制台窗口不会被隐藏。
 
 Windows ACL 沙箱在这些原语上增加 SID、DACL、grant、workspace 与公共 child 策略。
 
@@ -85,5 +87,3 @@ Koffi 的 `STARTUPINFOW` 与 `PROCESS_INFORMATION` 定义还会在模块加载�
 无。
 
 </details>
-
-**运行时不变式：** 不发布伴生入口。操作只持有调用内的原生句柄。

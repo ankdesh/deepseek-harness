@@ -8,6 +8,10 @@
     "src"
   ],
   "references": [
+    { "path": "../../workflow/flow" },
+    {
+      "path": "../../fs/fs"
+    },
     {
       "path": "../../../vendor/cordis"
     },
@@ -18,7 +22,7 @@
       "path": "../../llm/llm"
     },
     {
-      "path": "../../llm/llm-deepseek"
+      "path": "../../llm/llm-deepseek-api-key"
     },
     {
       "path": "../../core/agent"
@@ -36,10 +40,28 @@
       "path": "../../subagent/subagent"
     },
     {
-      "path": "../../workflow/flow"
+      "path": "../../session/working-directory"
     },
     {
-      "path": "../../util/values"
+      "path": "../../schedule/schedule"
+    },
+    {
+      "path": "../../interaction/user-questions"
+    },
+    {
+      "path": "../../interaction/user-approval"
+    },
+    {
+      "path": "../../interaction/commands"
+    },
+    {
+      "path": "../../goal/goal"
+    },
+    {
+      "path": "../../interaction/permission-presets"
+    },
+    {
+      "path": "../../account/deepseek-auth"
     }
   ]
 }

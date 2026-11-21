@@ -17,10 +17,11 @@ import Sessions from '@deepseek-ai/dsh-session'
 import Projections from '@deepseek-ai/dsh-session-projection'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import Tools from '@deepseek-ai/dsh-tools'
+import * as NativeTools from '@deepseek-ai/dsh-tool-executor-native'
 import Storage from '@deepseek-ai/dsh-storage'
 import * as StorageSqlite from '@deepseek-ai/dsh-storage-sqlite'
 import * as StorageDomain from '@deepseek-ai/dsh-storage-domain'
-import JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as JsonlPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import TokenMeter from '@deepseek-ai/dsh-token-meter'
 import Invariants from '@deepseek-ai/dsh-invariants'
 import * as EventInvariant from '../src/invariant.ts'
@@ -66,7 +67,7 @@ class CollaborationAdapter extends LlmAdapter {
     this.requests.push(options)
     const last = options.messages.at(-1)
     let input: { event?: { id: string; type: string } } = {}
-    if (last?.source?.kind === 'plugin') {
+    if (last?.source?.kind === 'event-system') {
       const text = last.content.find(block => block.type === 'text')
       if (text?.type === 'text' && text.text.startsWith('{')) input = JSON.parse(text.text) as typeof input
     }
@@ -114,6 +115,7 @@ export async function boot(root?: string) {
     ['@deepseek-ai/dsh-session-projection', Projections],
     ['@deepseek-ai/dsh-system-prompt', SystemPrompt],
     ['@deepseek-ai/dsh-tools', Tools],
+    ['@deepseek-ai/dsh-tool-executor-native', NativeTools],
     ['@deepseek-ai/dsh-agent', AgentRegistry],
     ['@deepseek-ai/dsh-session-persistence-jsonl', JsonlPersistence],
     ['@deepseek-ai/dsh-token-meter', TokenMeter],

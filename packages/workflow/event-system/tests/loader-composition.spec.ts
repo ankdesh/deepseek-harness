@@ -30,7 +30,7 @@ describe('persistent event collaboration through Loader', () => {
       adapter.requests.some(request =>
         request.messages.some(
           message =>
-            message.source.kind === 'plugin' &&
+            message.source?.kind === 'event-system' &&
             message.content.some(block => block.type === 'text' && block.text.includes('activation_id')),
         ),
       ),
@@ -132,7 +132,7 @@ describe('bounded native continuation and human controls', () => {
     expect(state.deliveries).toHaveLength(0)
     expect(state.members).toHaveLength(1)
     expect(
-      adapter.requests.every(request => request.messages.some(message => message.source.kind === 'goal')),
+      adapter.requests.every(request => request.messages.some(message => message.source?.kind === 'goal')),
     ).toBe(true)
     await expect(ctx.eventSystems.control(primary.agent.id, state.revision, 'resume')).rejects.toThrow(
       'Budget exhausted',

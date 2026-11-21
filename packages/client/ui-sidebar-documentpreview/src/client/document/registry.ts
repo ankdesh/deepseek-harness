@@ -2,8 +2,8 @@
 import { notifySubscribers } from '@deepseek-ai/dsh-client-store'
 import { documentFileName, matchedSuffixLength, normalizeSuffix } from './suffix.ts'
 
-/** How the document owner delivers file contents to a renderer. */
-export type DocumentLoadMode = 'text-pages' | 'bytes-complete'
+/** Shared text or byte reads, or content loading owned by the renderer. */
+export type DocumentLoadMode = 'text-pages' | 'bytes-complete' | 'renderer'
 
 /** One renderer implementation, independent of its component registration. */
 export interface DocumentPreviewDefinition {
@@ -25,6 +25,11 @@ export interface DocumentPreviewDefinition {
   readonly loading: DocumentLoadMode
   /** Whether the implementation consumes the document's wrap preference. */
   readonly wrap?: boolean
+  /**
+   * Whether a `text-pages` body exposes source-line anchors for line navigation;
+   * without it, a navigation to a line is answered without moving the body.
+   */
+  readonly sourceLines?: boolean
 }
 
 /**

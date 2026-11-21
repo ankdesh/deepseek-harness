@@ -1,5 +1,8 @@
 CLAUDE.local.md
 .env
+apps/desktop/.env.windows
+apps/desktop/.env.macos
+apps/desktop/*.p12
 node_modules/
 lib/
 *.tsbuildinfo
@@ -29,14 +32,17 @@ mise.toml
 dist-exe/
 /dist/
 apps/desktop/.desktop-build/
-python/sdk-runtime/src/deepseek_harness_runtime/runtime/deepseek-harness-sdk-runtime-*
-python/sdk-runtime/src/deepseek_harness_runtime/runtime/node/
+apps/desktop/.desktop-dev/
+python/sdk-runtime/src/deepseek_harness_runtime/runtime/
 python/**/__pycache__/
 python/**/.pytest_cache/
 packages/**/__pycache__/
 apps/web/dist/
+apps/cli/docs/
 .artifacts/
 .dsh-build/
+.dsh-report/
+.ui-review/
 .playwright-mcp/
 .orig
 .worktrees/
@@ -45,8 +51,9 @@ worktrees/
 .typert-*/
 native/system/test/bin/
 
+# Generated company-signed CUA release record.
+/packages/experimental/cua-macos/cua-helper.json
+
+# Fork-local build and verification output.
 TEMP_*
 **/TEMP_*
-
-/node_modules
-**/node_modules

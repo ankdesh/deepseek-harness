@@ -8,6 +8,7 @@
     "src"
   ],
   "references": [
+    { "path": "../../workflow/flow" },
     {
       "path": "../../../vendor/cosmokit"
     },
@@ -24,10 +25,10 @@
       "path": "../../subagent/subagent"
     },
     {
-      "path": "../../workflow/flow"
+      "path": "../../interaction/user-questions"
     },
     {
-      "path": "../../util/values"
+      "path": "../../interaction/commands"
     }
   ]
 }

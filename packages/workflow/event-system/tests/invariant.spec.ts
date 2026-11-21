@@ -1,3 +1,4 @@
+import { SessionSeq } from '@deepseek-ai/dsh-session/types'
 /** Diagnose disagreement between durable deliveries and independent native receipts. */
 import { randomUUID, createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
@@ -123,11 +124,11 @@ describe('native delivery observation invariant', () => {
       if (!delivery) throw new Error('Missing fixture delivery')
       const message = createUserMessage({
         content: [{ type: 'text', text: 'Inspect' }],
-        source: { kind: 'plugin', plugin: 'event-system', form: 'relay' },
+        source: { kind: 'event-system', form: 'relay' },
       })
       ctx.emit('session/event', session, {
         type: 'user/message',
-        seq: 0,
+        seq: SessionSeq(0),
         time: 1,
         data: { ...message, id: delivery.messageId },
       } as SessionEvent)

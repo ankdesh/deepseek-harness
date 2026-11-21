@@ -9,7 +9,7 @@ kind: "package-group"
 
 ## 概述
 
-使用 workflow 组可选择部署拥有的持久工作流或模型编写的编排。`s-workflow` 在完整 Session 快照中保存版本化 definition、预算、草稿与人类决策；其受限工具只报告进度，不拥有生命周期权限。独立的 `workflow` 和 `ralph` 工具继续提供脚本化扇出和固定的全新 agent 循环。
+workflow 组让 agent（智能体）可以运行编排脚本，将工作委派给 subagent 并返回最终值。`workflow` 工具支持脚本化扇出。脚本使用共享 PTC Node 进程运行时，遵守调用 Session 的文件策略。工作流钩子和子 agent 生命周期仍由工作流引擎负责。
 
 ## 目录
 
@@ -24,35 +24,21 @@ kind: "package-group"
 
 | 包 | 职责 | ctx 键 |
 |---|---|---|
-| [`event-system`](event-system/README.zh.md) | 持久对话内事件 agent 与宿主聚合预算 | `ctx.eventSystems` |
-| [`event-system-yaml`](event-system-yaml/README.zh.md) | 可信 YAML 成员／订阅与 Markdown 提示词 | `ctx.eventSystemsYaml` |
-| [`event-system-http`](event-system-http/README.zh.md) | 获准 HTTP 条件、持久游标及防抖 | `ctx.eventHttpSources` |
-| [`flow`](flow/README.zh.md) | 可复用 flow 定义、执行或消费者 | flow |
-| [`flow-runtime`](flow-runtime/README.zh.md) | 可复用 flow 定义、执行或消费者 | `ctx.flows` |
-| [`flow-yaml`](flow-yaml/README.zh.md) | 可复用 flow 定义、执行或消费者 | flow |
-| [`flow-model-native`](flow-model-native/README.zh.md) | 可复用 flow 定义、执行或消费者 | flow |
-| [`tool-flow`](tool-flow/README.zh.md) | 可复用 flow 定义、执行或消费者 | flow |
 | [`workflow`](workflow/README.zh.md) | 运行由模型编写的、扇出 subagent 的编排脚本 | `ctx.workflowEngine` |
 | [`workflow-ptc`](workflow-ptc/README.zh.md) | 通过共享的沙箱化 PTC Node 进程运行时执行工作流脚本 | 注册到 `ctx.workflowEngine` |
 | [`tool-workflow`](tool-workflow/README.zh.md) | 把 `workflow` 工具交给模型，用于脚本化多 agent 编排 | 注册到 `ctx.tools` |
-| [`tool-ralph`](tool-ralph/README.zh.md) | 把 `ralph` 工具交给模型，用于全新 agent 迭代循环 | 注册到 `ctx.tools` |
-| [`s-workflow`](s-workflow/README.zh.md) | 运行持久、目录定义、由人类治理的工作流状态 | `ctx.sWorkflow` |
-| [`s-workflow-yaml`](s-workflow-yaml/README.zh.md) | 加载严格无代码的工作流与服务 adapter YAML | `ctx.sWorkflowYaml` |
-| [`tool-s-workflow`](tool-s-workflow/README.zh.md) | 向模型提供受限的工作流进度与审核请求工具 | 注册到 `ctx.tools` |
 
 -----
 
 <a id="related-documentation"></a>
 ## 相关文档
 
-- [可复用 flows](../../docs/subsystems/flows.zh.md) — 定义、恢复、原生阶段和限制。
 - [工作流子系统](../../docs/subsystems/workflow.zh.md)——seam 的类型、启动请求与 `workflow/*` 事件。
 - [生成的工具目录](../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-workflow)——模型接收的 `workflow` 工具 schema。
 - [生成的工具目录](../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-ralph)——模型接收的 `ralph` 工具 schema。
-- [生成的工具目录](../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-s-workflow)——模型接收的受限持久工作流 schema。
 - [生成的配置目录](../../docs/config-catalog.zh.md#deepseek-aidsh-workflow-ptc)——每个受支持的引擎配置字段。
-- [动态工作流 Agent Note](../../.agents/notes/implemented/feature/2026-07-05-dynamic-workflows.zh.md)——seam 设计及其决策。
-- [Harness 层目标式执行 Agent Note](../../.agents/notes/implemented/feature/2026-07-16-harness-level-loop.zh.md)——固定全新 agent 循环的设计与暂缓事项。
+- [历史动态工作流 Agent Note](../../.agents/notes/archived/feature/2026-07-05-dynamic-workflows.md)——seam 设计及其决策。
+- [Harness 层目标式执行 参考](../experimental/tool-ralph/README.zh.md)——固定全新 agent 循环的设计与暂缓事项。
 
 -----
 

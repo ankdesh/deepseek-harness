@@ -11,6 +11,7 @@
     "src/types.ts"
   ],
   "references": [
+    { "path": "../../workflow/flow" },
     {
       "path": "../../../vendor/cordis"
     },
@@ -36,7 +37,10 @@
       "path": "../../goal/goal"
     },
     {
-      "path": "../../preset/agent-presets"
+      "path": "../../schedule/schedule"
+    },
+    {
+      "path": "../../preset/agent-preset-registry"
     },
     {
       "path": "../../extensions/cordis-host-runner"
@@ -75,7 +79,22 @@
       "path": "../terminal-controller/tsconfig.host.json"
     },
     {
-      "path": "../../workflow/flow"
+      "path": "../../boot/plugin-manager"
+    },
+    {
+      "path": "../../mcp/mcp-manager"
+    },
+    {
+      "path": "../../boot/plugin-market"
+    },
+    {
+      "path": "../../host/plugin-inventory"
+    },
+    {
+      "path": "../../account/deepseek-account"
+    },
+    {
+      "path": "../../web/web"
     }
   ]
 }

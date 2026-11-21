@@ -8,6 +8,8 @@
     "src"
   ],
   "references": [
+    { "path": "../../workflow/flow-runtime" },
+    { "path": "../../workflow/flow" },
     {
       "path": "../../../vendor/cordis"
     },
@@ -39,7 +41,16 @@
       "path": "../../fs/fs"
     },
     {
-      "path": "../../workflow/flow"
+      "path": "../../subagent/subagent"
+    },
+    {
+      "path": "../../interaction/permission-presets"
+    },
+    {
+      "path": "../../sandbox/sandbox-policy"
+    },
+    {
+      "path": "../../interaction/user-approval"
     }
   ]
 }

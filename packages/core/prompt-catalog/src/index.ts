@@ -132,7 +132,13 @@ export class PromptCatalog extends Service {
     super(ctx, 'promptCatalog')
   }
 
-  register(input: PromptBundle, source = 'inline'): () => void {
+  /**
+   * Register an immutable prompt bundle before startup sealing.
+   * @param input - Value to register.
+   * @param source - Origin of the registration.
+   * @returns Disposer that removes this registration.
+   */
+  register(input: PromptBundle, source: string = 'inline'): () => void {
     if (this.sealed) throw new Error('prompt catalog is sealed')
     const bundle = validatePromptBundle(input)
     const key = this.key(bundle.metadata)
@@ -148,17 +154,32 @@ export class PromptCatalog extends Service {
     }
   }
 
+  /**
+   * Look up the pinned catalog entry.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @returns The registered entry.
+   */
   get(ref: PromptBundleRef): PromptCatalogEntry {
     const entry = this.entries.get(this.key(ref))
     if (entry === undefined) throw new Error(`unknown prompt bundle ${this.key(ref)}`)
     return entry
   }
 
+  /**
+   * List the available prompt bundles.
+   * @returns Catalog entries in stable order.
+   */
   list(): readonly PromptCatalogEntry[] {
     return [...this.entries.values()].sort((left, right) =>
       this.key(left.bundle.metadata).localeCompare(this.key(right.bundle.metadata)))
   }
 
+  /**
+   * Substitute values into a pinned prompt bundle.
+   * @param ref - Pinned identity and, for a run, expected revision.
+   * @param variables - Values for the bundle placeholders.
+   * @returns Bound text and its source identity.
+   */
   bind(ref: PromptBundleRef, variables: Readonly<Record<string, string>> = {}): BoundPromptBundle {
     const entry = this.get(ref)
     const sections = entry.bundle.sections.map(section => ({ ...section, text: render(section.text, variables) }))
@@ -170,7 +191,14 @@ export class PromptCatalog extends Service {
     return { ref: { ...ref }, digest: entry.digest, sections, texts }
   }
 
+  /**
+   * Close registration for this catalog.
+   */
   seal(): void { this.sealed = true }
+  /**
+   * Report whether registration is closed.
+   * @returns True after sealing.
+   */
   isSealed(): boolean { return this.sealed }
 
   private key(ref: PromptBundleRef): string { return `${ref.id}@${ref.version}` }
