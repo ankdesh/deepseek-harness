@@ -12,7 +12,6 @@ import {
 } from '@deepseek-ai/dsh-client-locale/client'
 import type { LanguageRowInjected, LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { LOCALE_SETTINGS_NAMESPACE, LocaleSettingsSchema } from '../src/locale-settings.ts'
-import { Config as HostConfig } from '../src/index.ts'
 import { LanguageRow } from '../src/client/LanguageRow.tsx'
 import type { createLanguageRowStore } from '../src/client/settings-store.ts'
 
@@ -150,13 +149,10 @@ describe('locale apply', () => {
     const b = await bench()
     b.setHostPreference('zh')
     declareItems(b.slots)
-    const policy = new HostConfig({ allowedLocales: ['en'], defaultLocale: 'en', showLanguageSetting: false })
     await b.ctx.plugin({
       inject: [...inject],
       apply: ctx => apply(ctx, syncedConfig({
-        allowedLocales: [...policy.allowedLocales.get()!],
-        defaultLocale: policy.defaultLocale.get()!,
-        showLanguageSetting: policy.showLanguageSetting.get(),
+        allowedLocales: ['en'], defaultLocale: 'en', showLanguageSetting: false,
       })),
     }).await()
     const locale = b.ctx.get('locale') as LocaleRuntime

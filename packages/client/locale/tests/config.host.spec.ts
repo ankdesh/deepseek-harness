@@ -9,15 +9,22 @@ import {
 
 
 describe('locale host', () => {
+  it('retains product locale policy in the Host fields sent to the browser', () => {
+    const policy = new Config({ allowedLocales: ['en'], defaultLocale: 'en', showLanguageSetting: false })
+    expect(policy.allowedLocales.get()).toEqual(['en'])
+    expect(policy.defaultLocale.get()).toBe('en')
+    expect(policy.showLanguageSetting.get()).toBe(false)
+  })
+
   it('registers an open locale preference with the Host settings lifecycle', async () => {
     const ctx = new Context()
     const configuration = await liveConfig(ctx, { Config, apply })
     const { fiber } = configuration
-    expect(plainConfig(configuration.fiber.effectiveConfig)).toEqual({})
+    expect(plainConfig(configuration.fiber.effectiveConfig)).toMatchObject({ preference: undefined, showLanguageSetting: true })
     await configuration.update({ preference: 'en' })
-    expect(plainConfig(configuration.fiber.effectiveConfig)).toEqual({ preference: 'en' })
+    expect(plainConfig(configuration.fiber.effectiveConfig)).toMatchObject({ preference: 'en', showLanguageSetting: true })
     await configuration.update({ preference: 'pt-BR' })
-    expect(plainConfig(configuration.fiber.effectiveConfig)).toEqual({ preference: 'pt-BR' })
+    expect(plainConfig(configuration.fiber.effectiveConfig)).toMatchObject({ preference: 'pt-BR', showLanguageSetting: true })
     await expect(configuration.update({ preference: 'bad locale' })).rejects.toThrow()
     await expect(configuration.update({ preference: '123' })).rejects.toThrow()
     await fiber.dispose()

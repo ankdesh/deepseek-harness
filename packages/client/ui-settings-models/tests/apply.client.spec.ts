@@ -103,7 +103,8 @@ describe('ui-settings-models apply', () => {
       const value = createSnapshotStore<boolean | undefined>(undefined)
       const read = (): boolean | undefined => value.getSnapshot()
       const ref = { get: read, getSnapshot: read, subscribe: (fn: () => void) => value.subscribe(fn) }
-      await ctx.plugin({ inject: [...inject], apply }, { credentialOnboarding: ref }).await()
+      const policy = syncedConfig<hostPlugin.Config>({ showTestingNotice: true, showDeepSeekOnboarding: true })
+      await ctx.plugin({ inject: [...inject], apply }, { ...policy, credentialOnboarding: ref }).await()
       const source = automaticSource(slots)
       expect(source.getSnapshot()).toBe(true)
       const listener = vi.fn()
