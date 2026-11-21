@@ -5577,6 +5577,18 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'webRuntime',
+    summary: 'Explicit invocation authorities forwarded to an existing product connection row.',
+    description: 'Explicit invocation authorities forwarded to an existing product connection row.',
+    methods: [
+      {
+        signature: 'readonly trustedHosts: readonly string[]',
+        description: 'Allowed authorities explicitly supplied by the product.',
+        parameters: [],
+      },
+    ],
+  },
+  {
     key: 'webServer',
     summary: 'The browser HTTP carrier service.',
     description: 'The browser HTTP carrier service. Activation loads any configured TLS material, then listens immediately; a material or listen failure rejects initialization, and the boot process reports the failed fiber. Route registration order does not affect requests because configured named routes must be distinct, and a request no named route matches is answered 404 until the fallback owner registers. HTTP and upgrade admission refusals carry `Cache-Control: no-store`.',

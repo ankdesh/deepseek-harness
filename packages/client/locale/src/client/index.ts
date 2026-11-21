@@ -6,7 +6,7 @@
  */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { LocalizedText } from '@deepseek-ai/dsh-package-manifest'
-import z from '@deepseek-ai/schemastery'
+import type { SyncedConfig } from '@deepseek-ai/dsh-client-config/types'
 import {
   type BoundActions, type LocaleDictOf, type LocaleNamespaceMap, type Translate, type TranslateNS,
 } from '@deepseek-ai/dsh-client-ui-slots'
@@ -19,7 +19,7 @@ import { parseLocaleBootstrap, type LocaleBootstrap, type LocaleBridge } from '.
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import {
   LOCALE_ID_PATTERN, LOCALE_IDS, LOCALE_PREFERENCE_FIELD, LOCALE_SETTINGS_NAMESPACE,
-  type BuiltInLocaleId, type LocaleId, type LocaleSettings,
+  type BuiltInLocaleId, type LocaleConfig, type LocaleId, type LocaleSettings,
 } from '../locale-settings.ts'
 import { en, ja, es, fr, de, ru, pt, zh, type CommonKey } from '../locales/index.ts'
 import {
@@ -85,19 +85,12 @@ export interface LocaleSnapshot {
 /** Deployment policy for selectable and initially active languages. */
 export interface Config {
   /** Locale ids that language definitions may expose. English is required as the lookup terminal. */
-  allowedLocales?: LocaleId[]
+  allowedLocales?: readonly LocaleId[] | undefined
   /** Fixed initial locale; omission retains browser-language detection. */
-  defaultLocale?: LocaleId
+  defaultLocale?: LocaleId | undefined
   /** Whether the General settings page exposes the language selector. */
-  showLanguageSetting?: boolean
+  showLanguageSetting?: boolean | undefined
 }
-
-/** Validated deployment locale policy. */
-export const Config: z<Config> = z.object({
-  allowedLocales: z.array(z.string().pattern(LOCALE_ID_PATTERN)).required(false),
-  defaultLocale: z.string().pattern(LOCALE_ID_PATTERN).required(false),
-  showLanguageSetting: z.boolean().default(true),
-})
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -205,7 +198,7 @@ export class LocaleRuntime {
    * @param bootstrap - native initialization; absent in ordinary browsers.
    * @param policy - permitted languages and the deployment default.
    */
-  constructor(ctx: ClientContext, host?: ConfigForm<LocaleSettings>, private readonly bootstrap?: LocaleBootstrap, policy: Config = Config({})) {
+  constructor(ctx: ClientContext, host?: ConfigForm<LocaleSettings>, private readonly bootstrap?: LocaleBootstrap, policy: Config = {}) {
     this.ctx = ctx
     this.host = host
     const allowed = policy.allowedLocales !== undefined && policy.allowedLocales.length > 0
@@ -604,9 +597,15 @@ export const inject = ['slots', 'remote', 'configForms']
  * register the feature-owned Language preference row into the General
  * section's item slot (a feature owns its settings surface).
  * @param ctx - client cordis context.
+ * @param synced - deployment policy projected from the Host.
  * @returns resolves after native language initialization and plugin registration.
  */
-export async function apply(ctx: ClientContext, config: Config = Config({})): Promise<void> {
+export async function apply(ctx: ClientContext, synced: Partial<SyncedConfig<LocaleConfig>> = {}): Promise<void> {
+  const config: Config = {
+    allowedLocales: synced.allowedLocales?.get(),
+    defaultLocale: synced.defaultLocale?.get(),
+    showLanguageSetting: synced.showLanguageSetting?.get(),
+  }
   const bridge = (globalThis as { __DSH_LOCALE__?: LocaleBridge }).__DSH_LOCALE__
   let bootstrap: LocaleBootstrap | undefined
   if (bridge !== undefined) {

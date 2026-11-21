@@ -57,6 +57,7 @@
     "@deepseek-ai/dsh-settings": "workspace:*"
   },
   "dependencies": {
+    "@deepseek-ai/dsh-client-config": "workspace:*",
     "@deepseek-ai/schemastery": "workspace:~"
   },
   "files": [

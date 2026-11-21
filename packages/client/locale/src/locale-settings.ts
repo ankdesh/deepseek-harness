@@ -1,5 +1,6 @@
 /** Locale preference stored in the Host user-settings document. */
 
+import type { Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 
 /** Settings namespace owned by the locale plugin. */
@@ -33,3 +34,16 @@ export const LocaleSettingsFields = {
 
 /** Schema for the shared locale preference. */
 export const LocaleSettingsSchema = z.object(LocaleSettingsFields)
+
+
+/** Host preferences and deployment policy projected to the browser. */
+export interface LocaleConfig {
+  /** Explicit locale; omission follows the browser. */
+  preference: Volatile<string | undefined>
+  /** Locale ids allowed by the deployment. */
+  allowedLocales: Volatile<string[] | undefined>
+  /** Initial locale when the deployment sets one. */
+  defaultLocale: Volatile<string | undefined>
+  /** Whether the browser presents the Language setting. */
+  showLanguageSetting: Volatile<boolean>
+}

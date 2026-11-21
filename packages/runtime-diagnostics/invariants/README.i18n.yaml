@@ -48,8 +48,11 @@
   en: a73c87b49e9567ae
   zh: f1435de5a7c0549c
 /deepseek-ai-dsh-invariants/model-experience:
-  en: 269727a21a370a19
-  zh: 9b9ab038146410cb
+  en: 479e20d84e806916
+  zh: 5d79c5cd39c2d51f
+/deepseek-ai-dsh-invariants/model-experience/kv-cache-effect:
+  en: 34875d91a6b7936c
+  zh: 6e06e04335979892
 /deepseek-ai-dsh-invariants/known-limitations-and-deferred-work:
   en: ab7a68299ef375bc
   zh: e67db4a00f5fe911

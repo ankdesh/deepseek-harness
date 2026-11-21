@@ -36,10 +36,18 @@ export interface WebApp {
   getAdvertisedUrl(): string
 }
 
+/** Explicit invocation authorities forwarded to an existing product connection row. */
+export interface WebRuntimeValues {
+  /** Allowed authorities explicitly supplied by the product. */
+  readonly trustedHosts: readonly string[]
+}
+
 declare module '@deepseek-ai/cordis' {
   interface Context {
     /** The Web GUI this process serves; absent when no Web runtime is mounted. */
     webApp: WebApp
+    /** Compatibility service for product connection rows. */
+    webRuntime: WebRuntimeValues
   }
 }
 
@@ -70,6 +78,8 @@ export interface Config {
    * Absent or YAML `null` advertises the bind-address URL.
    */
   publicUrl?: string
+  /** Explicit authorities used by product connection rows that inject webRuntime. */
+  trustedHosts?: string[]
 }
 
 export const Config: z<Config> = z.object({
@@ -77,6 +87,7 @@ export const Config: z<Config> = z.object({
   printUrl: z.boolean().default(true),
   surfaceContext: z.boolean().default(true),
   publicUrl: z.transform(z.string(), value => parsePublicUrl(value).href),
+  trustedHosts: z.array(String).default([]),
 })
 
 /** Environment variable naming the advertised URL of this Web GUI. */
@@ -213,6 +224,7 @@ export function apply(ctx: Context, config: Config): void {
   /** The advertised root: the canonical `publicUrl`, or the listener's own origin. */
   const appRootUrl = (): string => publicUrl ?? ctx.webServer.getOrigin()
   ctx.provide('webApp', { getAdvertisedUrl: appRootUrl } satisfies WebApp)
+  ctx.provide('webRuntime', { trustedHosts: Object.freeze([...(config.trustedHosts ?? [])]) } satisfies WebRuntimeValues)
   ctx.plugin(FrontendStatic, { distIndex: internals.resolveDistIndex() })
   if (config.surfaceContext) {
     ctx.inject(['shellEnv'], (runtimeCtx) => {

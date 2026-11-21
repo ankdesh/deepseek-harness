@@ -6,7 +6,7 @@ import { Context } from '@deepseek-ai/cordis'
 import Invariants from '@deepseek-ai/dsh-invariants'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import { createUserMessage, MessageId } from '@deepseek-ai/dsh-llm'
-import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
+import type { Session } from '@deepseek-ai/dsh-session'
 import * as Companion from '../src/invariant.ts'
 import type { EventSystemSnapshot, EventSystemDefinition, DeliveryId, EventId, ActivationId } from '../src/types.ts'
 
@@ -130,8 +130,9 @@ describe('native delivery observation invariant', () => {
         type: 'user/message',
         seq: SessionSeq(0),
         time: 1,
+        surfaceOp: 'append',
         data: { ...message, id: delivery.messageId },
-      } as SessionEvent)
+      })
       const accepted: EventSystemSnapshot = {
         ...state,
         revision: 2,

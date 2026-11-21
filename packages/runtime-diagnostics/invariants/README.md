@@ -125,7 +125,11 @@ Read these pages when the package-level contract is not enough. They move from t
 <a id="model-experience"></a>
 ## Model Experience
 
-None, as the observer validates requests but never rewrites their context.
+None, as the registry runs Host checks and adds no model input.
+
+#### KV Cache effect
+
+Checks read runtime state without changing the request.
 
 ## Known Limitations and Deferred Work
 

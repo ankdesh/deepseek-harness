@@ -1,27 +1,27 @@
 /** Host registration for the browser locale preference. */
 import type {} from '@deepseek-ai/dsh-settings'
 
-import type { Volatile, Context } from '@deepseek-ai/cordis'
+import type { Context } from '@deepseek-ai/cordis'
 
 import z from '@deepseek-ai/schemastery'
-import { LOCALE_PREFERENCE_FIELD } from './locale-settings.ts'
+import { LOCALE_ID_PATTERN, LOCALE_PREFERENCE_FIELD } from './locale-settings.ts'
 
-import { LocaleSettingsFields } from './locale-settings.ts'
+import { LocaleSettingsFields, type LocaleConfig } from './locale-settings.ts'
 
 export {
   LOCALE_IDS, LOCALE_PREFERENCE_FIELD, LOCALE_SETTINGS_NAMESPACE,
   type BuiltInLocaleId, type LocaleId, type LocaleSettings,
 } from './locale-settings.ts'
 
-/** Runtime preferences projected to the browser. */
-export interface Config {
-  /** Explicit locale; omission follows the browser. */
-  preference: Volatile<string | undefined>
-}
+/** Settings that the Host projects to the browser. */
+export type Config = LocaleConfig
 
 /** Live preferences projected to the browser. */
 export const Config = z.object({
   [LOCALE_PREFERENCE_FIELD]: LocaleSettingsFields[LOCALE_PREFERENCE_FIELD].volatile(),
+  allowedLocales: z.array(z.string().pattern(LOCALE_ID_PATTERN)).required(false).volatile(),
+  defaultLocale: z.string().pattern(LOCALE_ID_PATTERN).required(false).volatile(),
+  showLanguageSetting: z.boolean().default(true).volatile(),
 })
 
 /** Host preferences are consumed through the configuration form projection.

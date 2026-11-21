@@ -3177,9 +3177,10 @@ export interface Config {
 ## `@deepseek-ai/dsh-prompt-catalog-yaml`
 
 - `inject`: `promptCatalog`
-- `source`: [`packages/core/prompt-catalog-yaml/src/index.ts:11`](../packages/core/prompt-catalog-yaml/src/index.ts)
+- `source`: [`packages/core/prompt-catalog-yaml/src/index.ts:12`](../packages/core/prompt-catalog-yaml/src/index.ts)
 
 ```ts config-catalog
+/** Directories that contain startup-owned prompt definition files. */
 export interface Config {
   /** Trusted bundle files or non-recursive directories loaded once at startup. */
   roots: string[]
@@ -5407,7 +5408,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-web-runtime`
 
 - `inject`: `webServer`
-- `source`: [`packages/bundle/web-runtime/src/index.ts:55`](../packages/bundle/web-runtime/src/index.ts)
+- `source`: [`packages/bundle/web-runtime/src/index.ts:63`](../packages/bundle/web-runtime/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: composed deployment settings plus per-invocation command-line values. */
@@ -5429,6 +5430,8 @@ export interface Config {
    * Absent or YAML `null` advertises the bind-address URL.
    */
   publicUrl?: string
+  /** Explicit authorities used by product connection rows that inject webRuntime. */
+  trustedHosts?: string[]
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-web-runtime -->

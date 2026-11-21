@@ -125,7 +125,11 @@ ctx.plugin(EventSystemInvariant)
 <a id="model-experience"></a>
 ## 模型体验
 
-无。作为观察者，本包验证请求但从不改写其上下文。
+注册表运行主机检查，不增加模型输入。
+
+#### KV Cache 影响
+
+检查读取运行时状态，不修改请求。
 
 ## 已知限制与延期工作
 

@@ -115,6 +115,12 @@ describe('web-app runtime glue', () => {
     expect(warn).not.toHaveBeenCalled()
   })
 
+  it('provides the explicit authorities used by existing product connection rows', () => {
+    const ctx = context()
+    apply(ctx, new Config({ printUrl: false, openBrowser: false, trustedHosts: ['app.internal:8443'] }))
+    expect(ctx.webRuntime.trustedHosts).toEqual(['app.internal:8443'])
+  })
+
   it('advertises the configured public root behind a prefix-stripping proxy', async () => {
     const ctx = context()
     const contributions = shellContributions(ctx)

@@ -1039,8 +1039,12 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Plain node:http carrier: named-route registry, index transform taps, and the static dist fallback; web-transport plugins register their own routes.',
   },
   {
+    key: 'webRuntime', pkg: 'web-runtime', title: 'Product connection settings', mode: 'service',
+    note: 'Supplies explicitly configured trusted authorities to product connection rows.',
+  },
+  {
     key: 'webApp',
-    pkg: 'web-app',
+    pkg: 'web-runtime',
     title: 'Served Web GUI',
     mode: 'core',
     consumers: ['harness-dev-context'],

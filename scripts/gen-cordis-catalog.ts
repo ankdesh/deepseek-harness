@@ -110,6 +110,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   inspector: 'extensions.md',
   webServer: 'web-server.md',
   webApp: 'web-server.md',
+  webRuntime: 'web-server.md',
   llm: 'llm-streaming.md',
   lsp: 'lsp.md',
   messageFeedback: 'feedback.md',

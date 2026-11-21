@@ -9,6 +9,7 @@
     "src"
   ],
   "references": [
+    { "path": "../config" },
     {
       "path": "../../util/package-manifest"
     },

@@ -204,6 +204,14 @@ getAdvertisedUrl(): string
 
 Source: [`packages/bundle/web-runtime/src/index.ts`](../../packages/bundle/web-runtime/src/index.ts)
 
+<a id="ctxwebruntime--webruntimevalues"></a>
+
+### `ctx.webRuntime` — `WebRuntimeValues`
+
+Explicit invocation authorities forwarded to an existing product connection row.
+
+Source: [`packages/bundle/web-runtime/src/index.ts`](../../packages/bundle/web-runtime/src/index.ts)
+
 <a id="ctxwebserver--webserver"></a>
 
 ### `ctx.webServer` — `WebServer`
